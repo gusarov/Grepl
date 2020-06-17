@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace SimpleGrep
 {
-	class Program
+	public class Grep
 	{
-		static int Main(string[] args)
+		public static int Main(params string[] args)
 		{
 			var executor = new Executor();
 

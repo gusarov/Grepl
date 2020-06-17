@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace SimpleGrep
 {
-	class Executor
+	public class Executor
 	{
 		public string Dir { get; set; }
 		public List<string> Files { get; } = new List<string>();
@@ -16,6 +16,8 @@ namespace SimpleGrep
 		public bool Recursive { get; set; }
 
 		private readonly List<Regex> _regexes = new List<Regex>();
+
+		public static TextWriter Output = Console.Out;
 
 		public void Execute()
 		{
@@ -34,12 +36,18 @@ namespace SimpleGrep
 				throw new Exception("Directory does not exists");
 			}
 
+			if (Files.Count == 0 && Recursive)
+			{
+				Files.Add("*.*");
+			}
 
 			foreach (var filePattern in Files)
 			{
 				if (filePattern.Contains('*') || filePattern.Contains('?'))
 				{
-					foreach (var file in Directory.GetFiles(Dir, filePattern, Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
+					foreach (var file in Directory.GetFiles(Dir, filePattern, Recursive
+						? SearchOption.AllDirectories
+						: SearchOption.TopDirectoryOnly))
 					{
 						var subPath = file.Substring(Dir.Length + 1);
 						Process(subPath);
@@ -54,7 +62,7 @@ namespace SimpleGrep
 
 		void PrintFileName(string file)
 		{
-			Console.WriteLine();
+			Output.WriteLine();
 
 			var fileName = Path.GetFileName(file);
 			var fileNameWithoutExt = Path.GetFileNameWithoutExtension(file);
@@ -64,15 +72,12 @@ namespace SimpleGrep
 
 			using (Color(ConsoleColor.DarkCyan))
 			{
-				Console.Write(path);
-			}
-			using (Color(ConsoleColor.Cyan))
-			{
-				Console.Write(fileNameWithoutExt);
-			}
-			using (Color(ConsoleColor.DarkCyan))
-			{
-				Console.WriteLine(ext);
+				Output.Write(path);
+				using (Color(ConsoleColor.Cyan))
+				{
+					Output.Write(fileNameWithoutExt);
+				}
+				Output.WriteLine(ext);
 			}
 		}
 
@@ -121,12 +126,12 @@ namespace SimpleGrep
 						{
 							using (Color(ConsoleColor.Gray))
 							{
-								Console.Write(line.Substring(printPosition, match.Index - printPosition));
+								Output.Write(line.Substring(printPosition, match.Index - printPosition));
 							}
 						}
 						using (Color(ConsoleColor.Red))
 						{
-							Console.Write(match.Value);
+							Output.Write(match.Value);
 						}
 						printPosition = match.Index + match.Length;
 					}
@@ -135,7 +140,7 @@ namespace SimpleGrep
 					{
 						using (Color(ConsoleColor.Gray))
 						{
-							Console.WriteLine(line.Substring(printPosition));
+							Output.WriteLine(line.Substring(printPosition));
 						}
 					}
 				}
