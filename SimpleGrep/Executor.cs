@@ -9,11 +9,15 @@ namespace SimpleGrep
 {
 	public class Executor
 	{
+		public string ReplaceTo { get; set; }
+
 		public string Dir { get; set; }
 		public List<string> Files { get; } = new List<string>();
 
 		public List<string> Patterns { get; } = new List<string>();
 		public bool Recursive { get; set; }
+		public bool Save { get; set; }
+		public bool Debug { get; set; }
 
 		private readonly List<Regex> _regexes = new List<Regex>();
 
@@ -21,6 +25,20 @@ namespace SimpleGrep
 
 		public void Execute()
 		{
+			if (Debug)
+			{
+				using (Color(ConsoleColor.DarkGray))
+				{
+					Console.WriteLine("Patterns:");
+					foreach (var pattern in Patterns)
+					{
+						Console.WriteLine(pattern);
+					}
+				}
+			}
+
+			// Console.WriteLine("Replace to " + ReplaceTo);
+
 			foreach (var pattern in Patterns)
 			{
 				_regexes.Add(new Regex(pattern, RegexOptions.Compiled));
@@ -70,18 +88,19 @@ namespace SimpleGrep
 
 			var path = file.Substring(0, file.Length - fileName.Length);
 
-			using (Color(ConsoleColor.DarkCyan))
+			using (Color(ConsoleColor.DarkMagenta))
 			{
 				Output.Write(path);
-				using (Color(ConsoleColor.Cyan))
+				using (Color(ConsoleColor.Magenta))
 				{
-					Output.Write(fileNameWithoutExt);
+					Output.WriteLine(fileName);
+					// Output.Write(fileNameWithoutExt);
 				}
-				Output.WriteLine(ext);
+				// Output.WriteLine(ext);
 			}
 		}
 
-		IDisposable Color(ConsoleColor color)
+		public static IDisposable Color(ConsoleColor color)
 		{
 			return new ColorScope(color);
 		}
@@ -132,6 +151,13 @@ namespace SimpleGrep
 						using (Color(ConsoleColor.Red))
 						{
 							Output.Write(match.Value);
+						}
+						if (ReplaceTo != null)
+						{
+							using (Color(ConsoleColor.Green))
+							{
+								Output.Write(ReplaceTo);
+							}
 						}
 						printPosition = match.Index + match.Length;
 					}
