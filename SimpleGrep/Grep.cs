@@ -137,6 +137,11 @@ expression.rx:
 				executor.Files.Add(arg);
 			}
 
+			for (int i = 0; i < executor.Patterns.Count; i++)
+			{
+				executor.Patterns[i] = HydratePattern(executor.Patterns[i]);
+			}
+
 			if (executor.Patterns.Count == 0)
 			{
 				using (Color(ConsoleColor.Red))
@@ -177,7 +182,7 @@ expression.rx:
 					var pattern = File.ReadAllLines(file).FirstOrDefault();
 					if (!string.IsNullOrEmpty(pattern))
 					{
-						return HydratePattern(pattern);
+						return pattern;
 					}
 				}
 			}

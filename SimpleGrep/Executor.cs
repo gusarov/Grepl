@@ -56,7 +56,15 @@ namespace SimpleGrep
 
 			if (Files.Count == 0 && Recursive)
 			{
-				Files.Add("*.*");
+				if (Recursive)
+				{
+					Files.Add("*.*");
+				}
+				else
+				{
+					// STDIN
+					Files.Add("-");
+				}
 			}
 
 			foreach (var filePattern in Files)
@@ -102,6 +110,10 @@ namespace SimpleGrep
 
 		void Process(string file)
 		{
+			if (file == "-")
+			{
+				throw new NotImplementedException("STDIN is not implemented yet");
+			}
 			bool filePrinted = false;
 			var lines = File.ReadAllLines(file);
 			foreach (var line in lines)
