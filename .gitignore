@@ -2,3 +2,4 @@ obj/
 bin/
 .vs/
 ~$*.xlsx
+**/Properties/launchSettings.json
