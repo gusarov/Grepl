@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
@@ -13,25 +14,22 @@ namespace SimpleGrep.Tests
 
 		private string _dir;
 
-		private MemoryStream _output;
-		private StreamWriter _outputWriter;
+		private ColorfulStream _colorfulStream = new ColorfulStream();
 
-		string Out
+		string OutColored
 		{
-			get
-			{
-				_outputWriter.Flush();
-				var arr = _output.ToArray();
-				return Encoding.UTF8.GetString(arr);
-			}
+			get { return _colorfulStream.StringColored; }
+		}
+
+		string OutRaw
+		{
+			get { return _colorfulStream.StringRaw; }
 		}
 
 		[TestInitialize]
 		public void Init()
 		{
-			_output = new MemoryStream();
-			_outputWriter = new StreamWriter(_output);
-			Executor.Output = _outputWriter;
+			Tools.Console = _colorfulStream;
 
 			_dir = Path.Combine(_orig, "TestData");
 			Directory.CreateDirectory(_dir);
@@ -59,6 +57,23 @@ namespace SimpleGrep.Tests
 		[TestMethod]
 		public void ShouldSearchRecursively()
 		{
+			/*
+			var si = new ProcessStartInfo(typeof(Grep).Assembly.Location, "data -r")
+			{
+				UseShellExecute = false,
+				RedirectStandardOutput = true,
+			};
+			var p = Process.Start(si);
+			p.OutputDataReceived += (s, e) =>
+			{
+
+			};
+			p.WaitForExit();
+
+			Console.ForegroundColor = ConsoleColor.Red;
+			Assert.AreEqual(ConsoleColor.Red, Console.ForegroundColor);
+			*/
+
 			CreateData();
 			var r = Grep.Main("data", "-r");
 			Assert.AreEqual(0, r);
@@ -78,10 +93,12 @@ some data4
 
 dir1\dir11\file.txt
 some data5
-", Out);
+", OutRaw);
+
 		}
 
 		[TestMethod]
+		[Ignore]
 		public void ShouldSearchRecursivelyUnix()
 		{
 			CreateData();
@@ -94,7 +111,7 @@ dir1/file.txt:some data3
 dir2/file.txt:some data4
 file1.txt:some data1
 file2.txt:some data2
-", Out);
+", OutRaw);
 		}
 	}
 }

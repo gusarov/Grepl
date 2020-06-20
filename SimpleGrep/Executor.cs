@@ -7,6 +7,8 @@ using System.Text.RegularExpressions;
 
 namespace SimpleGrep
 {
+	using static Tools;
+
 	public class Executor
 	{
 		public string ReplaceTo { get; set; }
@@ -20,8 +22,6 @@ namespace SimpleGrep
 		public bool Debug { get; set; }
 
 		private readonly List<Regex> _regexes = new List<Regex>();
-
-		public static TextWriter Output = Console.Out;
 
 		public void Execute()
 		{
@@ -80,7 +80,7 @@ namespace SimpleGrep
 
 		void PrintFileName(string file)
 		{
-			Output.WriteLine();
+			Console.WriteLine();
 
 			var fileName = Path.GetFileName(file);
 			var fileNameWithoutExt = Path.GetFileNameWithoutExtension(file);
@@ -90,34 +90,13 @@ namespace SimpleGrep
 
 			using (Color(ConsoleColor.DarkMagenta))
 			{
-				Output.Write(path);
+				Console.Write(path);
 				using (Color(ConsoleColor.Magenta))
 				{
-					Output.WriteLine(fileName);
+					Console.WriteLine(fileName);
 					// Output.Write(fileNameWithoutExt);
 				}
 				// Output.WriteLine(ext);
-			}
-		}
-
-		public static IDisposable Color(ConsoleColor color)
-		{
-			return new ColorScope(color);
-		}
-
-		class ColorScope : IDisposable
-		{
-			private readonly ConsoleColor _original;
-
-			public ColorScope(ConsoleColor color)
-			{
-				_original = Console.ForegroundColor;
-				Console.ForegroundColor = color;
-			}
-
-			public void Dispose()
-			{
-				Console.ForegroundColor = _original;
 			}
 		}
 
@@ -145,18 +124,18 @@ namespace SimpleGrep
 						{
 							using (Color(ConsoleColor.Gray))
 							{
-								Output.Write(line.Substring(printPosition, match.Index - printPosition));
+								Console.Write(line.Substring(printPosition, match.Index - printPosition));
 							}
 						}
 						using (Color(ConsoleColor.Red))
 						{
-							Output.Write(match.Value);
+							Console.Write(match.Value);
 						}
 						if (ReplaceTo != null)
 						{
 							using (Color(ConsoleColor.Green))
 							{
-								Output.Write(ReplaceTo);
+								Console.Write(ReplaceTo);
 							}
 						}
 						printPosition = match.Index + match.Length;
@@ -166,7 +145,7 @@ namespace SimpleGrep
 					{
 						using (Color(ConsoleColor.Gray))
 						{
-							Output.WriteLine(line.Substring(printPosition));
+							Console.WriteLine(line.Substring(printPosition));
 						}
 					}
 				}

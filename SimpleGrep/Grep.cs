@@ -3,35 +3,36 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+
+[assembly:InternalsVisibleTo("SimpleGrep.Tests")]
 
 namespace SimpleGrep
 {
-	public class Vars
-	{
-		public static Vars Instance = new Vars();
-
-		private Dictionary<string, string> _values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-		public void Add(string var, string val)
-		{
-			_values.Add(var, val);
-		}
-
-		public IEnumerable<string> Names
-		{
-			get { return _values.Keys; }
-		}
-
-		public string Get(string var)
-		{
-			_values.TryGetValue(var, out var val);
-			return val;
-		}
-	}
+	using static Tools;
 
 	public class Grep
 	{
+		static string Exe =>
+			Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location);
+
 		public static int Main(params string[] args)
+		{
+			try
+			{
+				return MainHandler(args);
+			}
+			catch (Exception ex)
+			{
+				using (Color(ConsoleColor.Red))
+				{
+					System.Console.Error.WriteLine($"Internal Error: {ex}");
+					return 1;
+				}
+			}
+		}
+
+		public static int MainHandler(params string[] args)
 		{
 			var executor = new Executor();
 
@@ -57,7 +58,7 @@ namespace SimpleGrep
 							break;
 						case "-debug":
 							executor.Debug = true;
-							using (Executor.Color(ConsoleColor.DarkGray))
+							using (Color(ConsoleColor.DarkGray))
 							{
 								Console.WriteLine(string.Join(" ", args));
 								for (var index = 0; index < args.Length; index++)
@@ -79,16 +80,23 @@ namespace SimpleGrep
 						case "-var":
 							if (i + 2 >= args.Length)
 							{
-								using (Executor.Color(ConsoleColor.Red))
+								using (Color(ConsoleColor.Red))
 								{
-									Console.WriteLine("VAR option requires 2 more arguments: name & value");
-									return 1;
+									System.Console.Error.WriteLine(
+										$"'--var' option requires 2 more arguments: name & value\r\nSee:\r\n    {Exe} --help var");
 								}
+								/*System.Console.Error.WriteLine(@"EXAMPLE:
+    grepl -r *.csproj -f expression.rx --var Package Autofac --var ver 9.0.0
+expression.rx:
+((?<=(?'Package'),\sVersion=)(?'v'\d+\.\d+\.\d+)|(?<=packages\\(?'Package')\.)(?'v'\d+\.\d+\.\d+))
+" +
+								                               "");*/
+									return 1;
 							}
 							var var = args[++i];
 							var val = args[++i];
 							Vars.Instance.Add(var, val);
-							using (Executor.Color(ConsoleColor.Yellow))
+							using (Color(ConsoleColor.Yellow))
 							{
 								// Console.WriteLine($"Variable '{var}' = '{val}'");
 							}
@@ -97,7 +105,7 @@ namespace SimpleGrep
 							executor.ReplaceTo = args[++i];
 							break;
 						default:
-							using (Executor.Color(ConsoleColor.Red))
+							using (Color(ConsoleColor.Red))
 							{
 								Console.WriteLine($"Unknown option {arg}");
 								return 1;
@@ -131,7 +139,10 @@ namespace SimpleGrep
 
 			if (executor.Patterns.Count == 0)
 			{
-				Console.WriteLine("Pattern is not specified");
+				using (Color(ConsoleColor.Red))
+				{
+					System.Console.Error.WriteLine("Pattern is not specified");
+				}
 				return 1;
 			}
 
@@ -157,7 +168,7 @@ namespace SimpleGrep
 			foreach (var dir in _patternsDirs.Concat(new[] {"", Path.GetDirectoryName(Assembly.GetCallingAssembly().Location)}))
 			{
 				var file = Path.Combine(dir, fileName);
-				using (Executor.Color(ConsoleColor.DarkGray))
+				using (Color(ConsoleColor.DarkGray))
 				{
 					// Console.WriteLine("Try " + file);
 				}
