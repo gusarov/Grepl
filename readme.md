@@ -40,7 +40,7 @@ _**NOTE**: a single letter options are not combinable as of today! So, instead o
 
 ## Authors
 
-* **Dmitry Gusarov** - *Initial work* - [SimpleGrep](https://github.com/gusarov/SimpleGrep)
+* **Dmitry Gusarov** - *Initial work* - [Grepl](https://github.com/gusarov/Grepl)
 
 See also the list of [contributors](https://github.com/gusarov/SimpleGrep/contributors) who participated in this project.
 
