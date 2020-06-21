@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -78,12 +79,10 @@ namespace Grepl.Tests
 			var r = Grep.Main("data", "-r");
 			Assert.AreEqual(0, r);
 
-			Assert.AreEqual(@"
-file1.txt
-some data1
-
-file2.txt
-some data2
+			var raw = OutRaw;
+			var exp = @"
+dir1\dir11\file.txt
+some data5
 
 dir1\file.txt
 some data3
@@ -91,10 +90,34 @@ some data3
 dir2\file.txt
 some data4
 
-dir1\dir11\file.txt
-some data5
-", OutRaw);
+file1.txt
+some data1
 
+file2.txt
+some data2
+";
+
+			Print(raw);
+			Print(exp);
+
+			Assert.AreEqual(exp, raw);
+
+		}
+
+		void Print(string str)
+		{
+			Console.WriteLine("LINE A:");
+			var lines1 = str.Split(new[] { '\r' });
+			foreach (var line in lines1)
+			{
+				Console.WriteLine(string.Join("", line.Select(x => ((int)x).ToString("X2"))));
+			}
+			Console.WriteLine("LINE b:");
+			var lines2 = str.Split(new[] { '\n' });
+			foreach (var line in lines2)
+			{
+				Console.WriteLine(string.Join("", line.Select(x => ((int)x).ToString("X2"))));
+			}
 		}
 
 		[TestMethod]

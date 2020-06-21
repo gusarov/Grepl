@@ -3,3 +3,5 @@ bin/
 .vs/
 ~$*.xlsx
 **/Properties/launchSettings.json
+TestResults/
+

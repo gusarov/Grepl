@@ -73,7 +73,7 @@ namespace Grepl
 				{
 					foreach (var file in Directory.GetFiles(Dir, filePattern, Recursive
 						? SearchOption.AllDirectories
-						: SearchOption.TopDirectoryOnly))
+						: SearchOption.TopDirectoryOnly).OrderBy(x => x))
 					{
 						var subPath = file.Substring(Dir.Length + 1);
 						Process(subPath);
