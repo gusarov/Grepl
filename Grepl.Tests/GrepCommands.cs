@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SimpleGrep.Tests
+namespace Grepl.Tests
 {
 	[TestClass]
 	public class GrepCommands

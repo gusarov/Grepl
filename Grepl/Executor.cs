@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace SimpleGrep
+namespace Grepl
 {
 	using static Tools;
 

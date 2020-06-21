@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SimpleGrep
+namespace Grepl
 {
 	public class Vars
 	{
@@ -9,6 +9,7 @@ namespace SimpleGrep
 
 		private readonly Dictionary<string, string> _values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
+			["q"] = "\"",
 			["caret"] = "^",
 			["lt"] = "<",
 			["gt"] = ">",

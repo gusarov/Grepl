@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace SimpleGrep.Tests
+namespace Grepl.Tests
 {
 	public class ColorfulStream : TextWriter
 	{

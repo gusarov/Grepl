@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleGrep.Tests", "SimpleGrep.Tests\SimpleGrep.Tests.csproj", "{47B1D91C-E677-4035-8765-44281A68E36B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grepl.Tests", "Grepl.Tests\Grepl.Tests.csproj", "{47B1D91C-E677-4035-8765-44281A68E36B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleGrep", "SimpleGrep\SimpleGrep.csproj", "{7ABDC1BC-4652-41EF-BE87-87AA09553093}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Grepl", "Grepl\Grepl.csproj", "{7ABDC1BC-4652-41EF-BE87-87AA09553093}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

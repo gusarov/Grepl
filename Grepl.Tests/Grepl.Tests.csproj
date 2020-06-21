@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SimpleGrep\SimpleGrep.csproj" />
+    <ProjectReference Include="..\Grepl\Grepl.csproj" />
   </ItemGroup>
 
 </Project>

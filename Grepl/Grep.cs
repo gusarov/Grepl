@@ -5,9 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-[assembly:InternalsVisibleTo("SimpleGrep.Tests")]
+[assembly:InternalsVisibleTo("Grepl.Tests")]
 
-namespace SimpleGrep
+namespace Grepl
 {
 	using static Tools;
 

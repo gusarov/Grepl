@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using WConsole=System.Console;
 
-namespace SimpleGrep
+namespace Grepl
 {
 	static class Tools
 	{
