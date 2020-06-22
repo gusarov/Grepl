@@ -114,9 +114,19 @@ namespace Grepl
 				throw new NotImplementedException("STDIN is not implemented yet");
 			}
 			var filePrinted = false;
-			var lines = File.ReadAllLines(file);
+			var body = File.ReadAllText(file);
+			var lines = body.Split('\n');
+			// var lastEndLine = body[^1] == '\n';
+			var sw = new StreamWriter(new MemoryStream());
+			bool lineEndScheduled = false;
 			foreach (var line in lines)
 			{
+				if (lineEndScheduled && Save)
+				{
+					sw.Write('\n');
+				}
+
+				var replaced = line;
 				foreach (var regex in _regexes)
 				{
 					var printPosition = 0;
@@ -159,8 +169,26 @@ namespace Grepl
 							Console.WriteLine(line.Substring(printPosition));
 						}
 					}
+
+					if (Save && ReplaceTo != null)
+					{
+						replaced = regex.Replace(replaced, ReplaceTo);
+					}
 				}
+
+				sw.Write(replaced);
+				lineEndScheduled = true;
 			}
+
+			/*
+			if (lineEndScheduled && lastEndLine)
+			{
+				sw.Write('\n');
+			}
+			*/
+
+			sw.Flush();
+			File.WriteAllBytes(file, ((MemoryStream)sw.BaseStream).ToArray());
 		}
 	}
 }
