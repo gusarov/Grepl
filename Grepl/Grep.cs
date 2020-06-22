@@ -137,7 +137,7 @@ expression.rx:
 				executor.Files.Add(arg);
 			}
 
-			for (int i = 0; i < executor.Patterns.Count; i++)
+			for (var i = 0; i < executor.Patterns.Count; i++)
 			{
 				executor.Patterns[i] = HydratePattern(executor.Patterns[i]);
 			}

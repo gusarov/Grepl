@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Grepl.Tests
 {
 	[TestClass]
-	public class GrepCommands
+	public class GrepCommands : TestBase
 	{
 		private static string _orig = Directory.GetCurrentDirectory();
 
@@ -38,7 +38,7 @@ namespace Grepl.Tests
 			Directory.CreateDirectory(_dir);
 
 			Directory.SetCurrentDirectory(_dir);
-			Console.WriteLine(_dir);
+			Console.WriteLine("CD /D " + _dir);
 		}
 
 		void CreateData()
@@ -58,28 +58,43 @@ namespace Grepl.Tests
 		[TestMethod]
 		public void ShouldSearchRecursively()
 		{
-			/*
-			var si = new ProcessStartInfo(typeof(Grep).Assembly.Location, "data -r")
-			{
-				UseShellExecute = false,
-				RedirectStandardOutput = true,
-			};
-			var p = Process.Start(si);
-			p.OutputDataReceived += (s, e) =>
-			{
-
-			};
-			p.WaitForExit();
-
-			Console.ForegroundColor = ConsoleColor.Red;
-			Assert.AreEqual(ConsoleColor.Red, Console.ForegroundColor);
-			*/
-
 			CreateData();
 			var r = Grep.Main("data", "-r");
 			Assert.AreEqual(0, r);
 
 			var raw = OutRaw;
+			var exp = @"
+dir1\dir11\file.txt
+some data5
+
+dir1\file.txt
+some data3
+
+dir2\file.txt
+some data4
+
+file1.txt
+some data1
+
+file2.txt
+some data2
+";
+
+			Print(raw);
+			Print(exp);
+
+			Assert.AreEqual(exp, raw);
+
+		}
+
+		[TestMethod]
+		public void ShouldSearchRecursivelyProc()
+		{
+			CreateData();
+			var r = Grepl("data", "-r");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
 			var exp = @"
 dir1\dir11\file.txt
 some data5
