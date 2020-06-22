@@ -3,6 +3,11 @@
 grepl is a command line tool for searching & replacing file content with RegEx expressions
 This tool is inspired by JGS PowerGrep but due to cli nature it is also an attempt to respect unix grep
 
+
+|Windows | Linux | maxOS |
+|--|--|--|
+| [![Build status](https://dev.azure.com/xkit/Grepl/_apis/build/status/Grepl%20Windows?branchName=master)](https://dev.azure.com/xkit/Grepl/_build/latest?definitionId=29) |[![Build status](https://dev.azure.com/xkit/Grepl/_apis/build/status/Grepl%20Linux?branchName=master)](https://dev.azure.com/xkit/Grepl/_build/latest?definitionId=30) |[![Build status](https://dev.azure.com/xkit/Grepl/_apis/build/status/Grepl%20macOS?branchName=master)](https://dev.azure.com/xkit/Grepl/_build/latest?definitionId=31)|
+
 ## Downloading and Installing
 
 _TBD_
@@ -35,7 +40,7 @@ _**NOTE**: a single letter options are not combinable as of today! So, instead o
 
 ## Authors
 
-* **Dmitry Gusarov** - *Initial work* - [SimpleGrep](https://github.com/gusarov/SimpleGrep)
+* **Dmitry Gusarov** - *Initial work* - [Grepl](https://github.com/gusarov/Grepl)
 
 See also the list of [contributors](https://github.com/gusarov/SimpleGrep/contributors) who participated in this project.
 
