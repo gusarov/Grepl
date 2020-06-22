@@ -15,23 +15,9 @@ namespace Grepl.Tests
 
 		private string _dir;
 
-		private ColorfulStream _colorfulStream = new ColorfulStream();
-
-		string OutColored
-		{
-			get { return _colorfulStream.StringColored; }
-		}
-
-		string OutRaw
-		{
-			get { return _colorfulStream.StringRaw; }
-		}
-
 		[TestInitialize]
 		public void Init()
 		{
-			Tools.Console = _colorfulStream;
-
 			_dir = Path.Combine(_orig, "TestData");
 			Directory.CreateDirectory(_dir);
 			_dir = Path.Combine(_orig, "TestData", Guid.NewGuid().ToString("N"));
@@ -59,10 +45,10 @@ namespace Grepl.Tests
 		public void ShouldSearchRecursively()
 		{
 			CreateData();
-			var r = Grep.Main("data", "-r");
-			Assert.AreEqual(0, r);
+			var r = GreplEntry("data", "-r");
+			Assert.AreEqual(0, r.Code);
 
-			var raw = OutRaw;
+			var raw = r.Output;
 			var exp = @"
 dir1\dir11\file.txt
 some data5
@@ -91,7 +77,7 @@ some data2
 		public void ShouldSearchRecursivelyProc()
 		{
 			CreateData();
-			var r = Grepl("data", "-r");
+			var r = GreplProc("data", "-r");
 			Assert.AreEqual(0, r.Code);
 
 			var raw = r.Output;
@@ -140,8 +126,8 @@ some data2
 		public void ShouldSearchRecursivelyUnix()
 		{
 			CreateData();
-			var r = Grep.Main("data", "-r", "--unix");
-			Assert.AreEqual(0, r);
+			var r = Grepl("data", "-r", "--unix");
+			Assert.AreEqual(0, r.Code);
 
 			Assert.AreEqual(
 @"dir1/dir11/file.txt:some data5
@@ -149,7 +135,75 @@ dir1/file.txt:some data3
 dir2/file.txt:some data4
 file1.txt:some data1
 file2.txt:some data2
-", OutRaw);
+", r.Output);
+		}
+
+		[TestMethod]
+		public void ShouldReplace()
+		{
+			CreateData();
+			var r = Grepl("data", "-r", "-$", "cat");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"
+dir1\dir11\file.txt
+some datacat5
+
+dir1\file.txt
+some datacat3
+
+dir2\file.txt
+some datacat4
+
+file1.txt
+some datacat1
+
+file2.txt
+some datacat2
+";
+
+			Print(raw);
+			Print(exp);
+
+			Assert.AreEqual(exp, raw);
+
+			Assert.AreEqual("some data1", File.ReadAllText("file1.txt"));
+		}
+
+		[TestMethod]
+		public void ShouldReplaceAndSave()
+		{
+			CreateData();
+			var r = Grepl("data", "-r", "-$", "cat", "--save");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"
+dir1\dir11\file.txt
+some datacat5
+
+dir1\file.txt
+some datacat3
+
+dir2\file.txt
+some datacat4
+
+file1.txt
+some datacat1
+
+file2.txt
+some datacat2
+";
+
+			Print(raw);
+			Print(exp);
+
+			Assert.AreEqual(exp, raw);
+
+			Assert.AreEqual("some cat1", File.ReadAllText("file1.txt"));
+			Assert.AreEqual("some cat2", File.ReadAllText("file2.txt"));
+			Assert.AreEqual("some cat3", File.ReadAllText("dir1\\file.txt"));
 		}
 	}
 }

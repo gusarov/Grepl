@@ -10,7 +10,7 @@ namespace Grepl.Tests
 {
 	public class TestBase
 	{
-		private Lazy<string> _slnDir = new Lazy<string>(() =>
+		private readonly Lazy<string> _slnDir = new Lazy<string>(() =>
 		{
 			var slnDir = typeof(Grep).Assembly.Location;
 			while (slnDir.Length > 0)
@@ -26,6 +26,21 @@ namespace Grepl.Tests
 		});
 
 		public (int Code, string Output, string Error) Grepl(params string[] args)
+		{
+			return GreplEntry(args);
+		}
+
+		public (int Code, string Output, string Error) GreplEntry(params string[] args)
+		{
+			var colorfulStream = new ColorfulStream();
+			Tools.Console = colorfulStream;
+
+			var r =  Grep.Main(args);
+
+			return (r, colorfulStream.StringRaw, "");
+		}
+
+		public (int Code, string Output, string Error) GreplProc(params string[] args)
 		{
 			var slnDir = _slnDir.Value;
 			var psi = new ProcessStartInfo("dotnet", $"run --project {Path.Combine(slnDir, "Grepl\\Grepl.csproj")} -- {string.Join(" ", args)}")
