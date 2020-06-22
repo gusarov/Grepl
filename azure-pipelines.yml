@@ -1,28 +1,93 @@
-# ASP.NET Core
-# Build and test ASP.NET Core projects targeting .NET Core.
-# Add steps that run tests, create a NuGet package, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
-trigger:
-- master
-
-pool:
-  name: Default
-  timeoutInMinutes: 1
-#  vmImage: 'ubuntu-latest'
-
 variables:
   buildConfiguration: 'Release'
 
-steps:
-- script: dotnet build --configuration $(buildConfiguration)
-- script: dotnet test --configuration $(buildConfiguration)
-- task: CopyFiles@2
-  displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
-  inputs:
-    Contents: 'Grepl\bin\Release\netcoreapp3.1\*.*'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
-    flattenFolders: true
+jobs:
+- job: Windows
+  displayName: 'Build on Windows'
+  pool:
+    name: default
+  steps:
+  - task: UseDotNet@2
+    inputs:
+      packageType: 'sdk'
+      version: '3.1.x'
+  - task: DotNetCoreCLI@2
+    displayName: Build
+    inputs:
+      command: build
+      arguments: '--configuration $(BuildConfiguration)'
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: drop'
+  - task: DotNetCoreCLI@2
+    displayName: Test
+    inputs:
+      command: test
+      arguments: '--configuration $(BuildConfiguration)'
+  - task: CopyFiles@2
+    inputs:
+      Contents: 'Grepl\bin\Release\netcoreapp3.1\**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      flattenFolders: true
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'dropWindows'
+      
+- job: Linux
+  displayName: 'Build on Linux'
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - task: UseDotNet@2
+    inputs:
+      packageType: 'sdk'
+      version: '3.1.x'
+  - task: DotNetCoreCLI@2
+    displayName: Build
+    inputs:
+      command: build
+      arguments: '--configuration $(BuildConfiguration)'
+
+  - task: DotNetCoreCLI@2
+    displayName: Test
+    inputs:
+      command: test
+      arguments: '--configuration $(BuildConfiguration)'
+  - task: CopyFiles@2
+    inputs:
+      Contents: 'Grepl/bin/Release/netcoreapp3.1/**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      flattenFolders: true
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'dropLinux'
+      
+- job: macOS
+  displayName: 'Build on macOS'
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - task: UseDotNet@2
+    inputs:
+      packageType: 'sdk'
+      version: '3.1.x'
+  - task: DotNetCoreCLI@2
+    displayName: Build
+    inputs:
+      command: build
+      arguments: '--configuration $(BuildConfiguration)'
+
+  - task: DotNetCoreCLI@2
+    displayName: Test
+    inputs:
+      command: test
+      arguments: '--configuration $(BuildConfiguration)'
+  - task: CopyFiles@2
+    inputs:
+      Contents: 'Grepl/bin/Release/netcoreapp3.1/**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      flattenFolders: true
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'dropMacOS'
