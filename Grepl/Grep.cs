@@ -57,7 +57,7 @@ namespace Grepl
 							patternsToLoad.Add(args[++i]);
 							break;
 						case "-debug":
-							executor.Debug = true;
+							Shared.Instance.Debug = true;
 							using (Color(ConsoleColor.DarkGray))
 							{
 								Console.WriteLine(string.Join(" ", args));

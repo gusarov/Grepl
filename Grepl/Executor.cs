@@ -19,13 +19,12 @@ namespace Grepl
 		public List<string> Patterns { get; } = new List<string>();
 		public bool Recursive { get; set; }
 		public bool Save { get; set; }
-		public bool Debug { get; set; }
 
 		private readonly List<Regex> _regexes = new List<Regex>();
 
 		public void Execute()
 		{
-			if (Debug)
+			if (Shared.Instance.Debug)
 			{
 				using (Color(ConsoleColor.DarkGray))
 				{
@@ -114,13 +113,13 @@ namespace Grepl
 			{
 				throw new NotImplementedException("STDIN is not implemented yet");
 			}
-			bool filePrinted = false;
+			var filePrinted = false;
 			var lines = File.ReadAllLines(file);
 			foreach (var line in lines)
 			{
 				foreach (var regex in _regexes)
 				{
-					int printPosition = 0;
+					var printPosition = 0;
 					var matches = regex.Matches(line);
 					if (matches.Any())
 					{

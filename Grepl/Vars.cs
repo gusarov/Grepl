@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace Grepl
 {
+
 	public class Vars
 	{
 		public static Vars Instance = new Vars();
