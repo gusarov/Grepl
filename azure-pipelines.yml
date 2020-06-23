@@ -22,16 +22,81 @@ jobs:
     inputs:
       command: test
       arguments: '--configuration $(BuildConfiguration)'
+  - task: DotNetCoreCLI@2
+    displayName: Publish win-x64
+    inputs:
+      command: publish
+      publishWebProjects: false
+      projects: 'grepl\grepl.csproj'
+      arguments: '-c $(BuildConfiguration) -r win-x64 -p:PublishSingleFile=true --self-contained false'
+      zipAfterPublish: false
+      modifyOutputPath: false
   - task: CopyFiles@2
     inputs:
-      Contents: 'Grepl\bin\Release\netcoreapp3.1\**'
-      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      Contents: 'Grepl\bin\Release\netcoreapp3.1\win-x64\publish\**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/win-x64'
+      flattenFolders: true
+  - task: DotNetCoreCLI@2
+    displayName: Publish linux-x64
+    inputs:
+      command: publish
+      publishWebProjects: false
+      projects: 'grepl/grepl.csproj'
+      arguments: '-c $(BuildConfiguration) -r linux-x64 -p:PublishSingleFile=true --self-contained false'
+      zipAfterPublish: false
+      modifyOutputPath: false
+  - task: CopyFiles@2
+    inputs:
+      Contents: 'Grepl\bin\Release\netcoreapp3.1\linux-x64\publish\**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/linux-x64'
+      flattenFolders: true
+  - task: DotNetCoreCLI@2
+    displayName: Publish linux-arm
+    inputs:
+      command: publish
+      publishWebProjects: false
+      projects: 'grepl/grepl.csproj'
+      arguments: '-c $(BuildConfiguration) -r linux-arm -p:PublishSingleFile=true --self-contained false'
+      zipAfterPublish: false
+      modifyOutputPath: false
+  - task: CopyFiles@2
+    inputs:
+      Contents: 'Grepl\bin\Release\netcoreapp3.1\linux-arm\publish\**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/linux-arm'
+      flattenFolders: true
+  - task: DotNetCoreCLI@2
+    displayName: Publish linux-arm64
+    inputs:
+      command: publish
+      publishWebProjects: false
+      projects: 'grepl/grepl.csproj'
+      arguments: '-c $(BuildConfiguration) -r linux-arm64 -p:PublishSingleFile=true --self-contained false'
+      zipAfterPublish: false
+      modifyOutputPath: false
+  - task: CopyFiles@2
+    inputs:
+      Contents: 'Grepl\bin\Release\netcoreapp3.1\linux-arm64\publish\**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/linux-arm64'
+      flattenFolders: true
+  - task: DotNetCoreCLI@2
+    displayName: Publish osx-x64
+    inputs:
+      command: publish
+      publishWebProjects: false
+      projects: 'grepl\grepl.csproj'
+      arguments: '-c $(BuildConfiguration) -r osx-x64 -p:PublishSingleFile=true --self-contained false'
+      zipAfterPublish: false
+      modifyOutputPath: false
+  - task: CopyFiles@2
+    inputs:
+      Contents: 'Grepl/bin/Release/netcoreapp3.1/osx-x64/publish/**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/osx-x64'
       flattenFolders: true
   - task: PublishBuildArtifacts@1
     inputs:
       PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'dropWindows'
-      
+      ArtifactName: 'drop'
+
 - job: Linux
   displayName: 'Build on Linux'
   pool:
@@ -46,22 +111,12 @@ jobs:
     inputs:
       command: build
       arguments: '--configuration $(BuildConfiguration)'
-
   - task: DotNetCoreCLI@2
     displayName: Test
     inputs:
       command: test
       arguments: '--configuration $(BuildConfiguration)'
-  - task: CopyFiles@2
-    inputs:
-      Contents: 'Grepl/bin/Release/netcoreapp3.1/**'
-      TargetFolder: '$(Build.ArtifactStagingDirectory)'
-      flattenFolders: true
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'dropLinux'
-      
+
 - job: macOS
   displayName: 'Build on macOS'
   pool:
@@ -76,18 +131,8 @@ jobs:
     inputs:
       command: build
       arguments: '--configuration $(BuildConfiguration)'
-
   - task: DotNetCoreCLI@2
     displayName: Test
     inputs:
       command: test
       arguments: '--configuration $(BuildConfiguration)'
-  - task: CopyFiles@2
-    inputs:
-      Contents: 'Grepl/bin/Release/netcoreapp3.1/**'
-      TargetFolder: '$(Build.ArtifactStagingDirectory)'
-      flattenFolders: true
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'dropMacOS'
