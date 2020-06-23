@@ -4,7 +4,7 @@ grepl is a command line tool for searching & replacing file content with RegEx e
 This tool is inspired by JGS PowerGrep but due to cli nature it is also an attempt to respect unix grep
 
 
-|Windows | Linux | maxOS |
+|Windows | Linux | macOS |
 |--|--|--|
 | [![Build status](https://dev.azure.com/xkit/Grepl/_apis/build/status/Grepl%20Windows?branchName=master)](https://dev.azure.com/xkit/Grepl/_build/latest?definitionId=29) |[![Build status](https://dev.azure.com/xkit/Grepl/_apis/build/status/Grepl%20Linux?branchName=master)](https://dev.azure.com/xkit/Grepl/_build/latest?definitionId=30) |[![Build status](https://dev.azure.com/xkit/Grepl/_apis/build/status/Grepl%20macOS?branchName=master)](https://dev.azure.com/xkit/Grepl/_build/latest?definitionId=31)|
 
