@@ -191,9 +191,9 @@ some datacat2
 
 			Assert.AreEqual(exp, raw);
 
-			Assert.AreEqual("some data1", File.ReadAllText("file1.txt"));
-			Assert.AreEqual("some data2", File.ReadAllText("file2.txt"));
-			Assert.AreEqual("some data3", File.ReadAllText("dir1\\file.txt"));
+			Assert.AreEqual("some data1\r\ndef\r", File.ReadAllText("file1.txt"));
+			Assert.AreEqual("some data2\r\nabc\r\n", File.ReadAllText("file2.txt"));
+			Assert.AreEqual("some data3\r\nqwe\n", File.ReadAllText("dir1\\file.txt"));
 		}
 
 		[TestMethod]
@@ -226,7 +226,7 @@ some datacat2
 			Assert.AreEqual(exp, raw);
 
 			Assert.AreEqual("some cat1\r\ndef\r", File.ReadAllText("file1.txt"));
-			Assert.AreEqual("some cat2\r\nanc\r\n", File.ReadAllText("file2.txt"));
+			Assert.AreEqual("some cat2\r\nabc\r\n", File.ReadAllText("file2.txt"));
 			Assert.AreEqual("some cat3\r\nqwe\n", File.ReadAllText("dir1\\file.txt"));
 		}
 	}

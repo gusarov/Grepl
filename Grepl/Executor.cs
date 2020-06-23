@@ -121,9 +121,12 @@ namespace Grepl
 			bool lineEndScheduled = false;
 			foreach (var line in lines)
 			{
-				if (lineEndScheduled && Save)
+				if (lineEndScheduled)
 				{
-					sw.Write('\n');
+					if (Save)
+					{
+						sw.Write('\n');
+					}
 				}
 
 				var replaced = line;
@@ -166,7 +169,7 @@ namespace Grepl
 					{
 						using (Color(ConsoleColor.Gray))
 						{
-							Console.WriteLine(line.Substring(printPosition));
+							Console.WriteLine(line.Substring(printPosition).TrimEnd('\r')); // already splitted by N, so  just in case get rid of R and use current console writeline for line ending
 						}
 					}
 
@@ -176,19 +179,27 @@ namespace Grepl
 					}
 				}
 
-				sw.Write(replaced);
+				if (Save)
+				{
+					sw.Write(replaced);
+				}
+
 				lineEndScheduled = true;
 			}
 
 			/*
-			if (lineEndScheduled && lastEndLine)
+			if (lineEndScheduled)
 			{
-				sw.Write('\n');
+				// sw.Write('\n');
+				Console.WriteLine();
 			}
 			*/
 
-			sw.Flush();
-			File.WriteAllBytes(file, ((MemoryStream)sw.BaseStream).ToArray());
+			if (Save)
+			{
+				sw.Flush();
+				File.WriteAllBytes(file, ((MemoryStream) sw.BaseStream).ToArray());
+			}
 		}
 	}
 }
