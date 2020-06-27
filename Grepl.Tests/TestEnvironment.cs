@@ -12,6 +12,7 @@ namespace Grepl.Tests
 		[TestMethod]
 		public void Should_read_any_line_break()
 		{
+			// this should pass on all agents: Windows, Linux, macOS
 			File.WriteAllText("test", "abc\r\ndef\rqwe\nrty");
 			var arr = File.ReadAllLines("test");
 			Assert.AreEqual(4, arr.Length);

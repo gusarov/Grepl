@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -13,23 +14,49 @@ namespace Grepl.Tests
 	public class GrepCommands : TestBase
 	{
 		private static string _orig = Directory.GetCurrentDirectory();
+		private static char s = Path.DirectorySeparatorChar;
 
 		private string _dir;
+
+		[AssemblyInitialize]
+		public static void AsmInit(TestContext ctx)
+		{
+			var dir = Path.Combine(_orig, "Temp");
+			if (Directory.Exists(dir))
+			{
+				Directory.Delete(dir, true);
+			}
+			Directory.CreateDirectory(dir);
+		}
 
 		[TestInitialize]
 		public void Init()
 		{
-			_dir = Path.Combine(_orig, "TestData");
-			Directory.CreateDirectory(_dir);
-			_dir = Path.Combine(_orig, "TestData", Guid.NewGuid().ToString("N"));
+			_dir = Path.Combine(_orig, "Temp");
+			_dir = Path.Combine(_dir, Guid.NewGuid().ToString("N"));
 			Directory.CreateDirectory(_dir);
 
 			Directory.SetCurrentDirectory(_dir);
 			Console.WriteLine("CD /D " + _dir);
 		}
 
-		void CreateData()
+		void CreateData(string sample = "1")
 		{
+			var sourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "TestData",
+				sample);
+
+			var destinationPath = Directory.GetCurrentDirectory();
+
+			foreach (string dirPath in Directory.GetDirectories(sourcePath, "*",
+				SearchOption.AllDirectories))
+				Directory.CreateDirectory(dirPath.Replace(sourcePath, destinationPath));
+
+			//Copy all the files & Replaces any files with the same name
+			foreach (string newPath in Directory.GetFiles(sourcePath, "*.*",
+				SearchOption.AllDirectories))
+				File.Copy(newPath, newPath.Replace(sourcePath, destinationPath), true);
+
+			return;
 			File.WriteAllText("file1.txt", "some data1\r\ndef\r");
 			File.WriteAllText("file2.txt", "some data2\r\nabc\r\n");
 
@@ -65,7 +92,7 @@ some data1
 
 file2.txt
 some data2
-";
+".Replace('\\', Path.DirectorySeparatorChar);
 
 			CompareDetails(exp, raw);
 
@@ -96,7 +123,7 @@ some data1
 
 file2.txt
 some data2
-";
+".Replace('\\', Path.DirectorySeparatorChar);
 
 			CompareDetails(exp, raw);
 
@@ -108,16 +135,27 @@ some data2
 		{
 			var aa = Printt(a).ToArray();
 			var bb = Printt(b).ToArray();
-			for (int i = 0; i < aa.Length; i++)
+			for (int i = 0; i < Math.Max(aa.Length, bb.Length); i++)
 			{
-				if (aa[i] == bb[i])
+				if (aa.Length > i && bb.Length > i)
 				{
-					Console.WriteLine($"{i} {aa[i] == bb[i]} {aa[i]}");
+					if (aa[i] == bb[i])
+					{
+						Console.WriteLine($"{i} {aa[i] == bb[i]} {aa[i]}");
+					}
+					else
+					{
+						Console.WriteLine($"{i} {aa[i] == bb[i]} {aa[i]}");
+						Console.WriteLine($"{i} {aa[i] == bb[i]} {bb[i]}");
+					}
 				}
-				else
+				else if (aa.Length <= i)
 				{
-					Console.WriteLine($"{i} {aa[i] == bb[i]} {aa[i]}");
-					Console.WriteLine($"{i} {aa[i] == bb[i]} {bb[i]}");
+					Console.WriteLine($"{i} Extra {bb[i]}");
+				}
+				else if (bb.Length <= i)
+				{
+					Console.WriteLine($"{i} Extra {aa[i]}");
 				}
 			}
 		}
@@ -184,7 +222,7 @@ some datacat1
 
 file2.txt
 some datacat2
-";
+".Replace('\\', Path.DirectorySeparatorChar);
 
 			CompareDetails(exp, raw);
 
@@ -193,7 +231,7 @@ some datacat2
 
 			Assert.AreEqual("some data1\r\ndef\r", File.ReadAllText("file1.txt"));
 			Assert.AreEqual("some data2\r\nabc\r\n", File.ReadAllText("file2.txt"));
-			Assert.AreEqual("some data3\r\nqwe\n", File.ReadAllText("dir1\\file.txt"));
+			Assert.AreEqual("some data3\r\nqwe\n", File.ReadAllText($"dir1{s}file.txt"));
 		}
 
 		[TestMethod]
@@ -219,7 +257,7 @@ some datacat1
 
 file2.txt
 some datacat2
-";
+".Replace('\\', Path.DirectorySeparatorChar);
 
 			CompareDetails(exp, raw);
 
@@ -227,7 +265,7 @@ some datacat2
 
 			Assert.AreEqual("some cat1\r\ndef\r", File.ReadAllText("file1.txt"));
 			Assert.AreEqual("some cat2\r\nabc\r\n", File.ReadAllText("file2.txt"));
-			Assert.AreEqual("some cat3\r\nqwe\n", File.ReadAllText("dir1\\file.txt"));
+			Assert.AreEqual("some cat3\r\nqwe\n", File.ReadAllText($"dir1{s}file.txt"));
 		}
 	}
 }
