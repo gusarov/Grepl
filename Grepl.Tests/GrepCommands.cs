@@ -26,6 +26,7 @@ namespace Grepl.Tests
 			{
 				Directory.Delete(dir, true);
 			}
+
 			Directory.CreateDirectory(dir);
 		}
 
@@ -69,15 +70,11 @@ namespace Grepl.Tests
 			File.WriteAllText("dir1\\dir11\\file.txt", "some data5");
 		}
 
-		[TestMethod]
-		public void Should_10_SearchRecursively()
+		string Data1
 		{
-			CreateData();
-			var r = GreplEntry("data", "-r");
-			Assert.AreEqual(0, r.Code);
-
-			var raw = r.Output;
-			var exp = @"
+			get
+			{
+				return @"
 dir1\dir11\file.txt
 some data5
 
@@ -93,6 +90,18 @@ some data1
 file2.txt
 some data2
 ".Replace('\\', Path.DirectorySeparatorChar);
+			}
+		}
+
+		[TestMethod]
+		public void Should_10_SearchRecursively()
+		{
+			CreateData();
+			var r = GreplEntry("data", "-r");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = Data1;
 
 			CompareDetails(exp, raw);
 
@@ -108,22 +117,7 @@ some data2
 			Assert.AreEqual(0, r.Code);
 
 			var raw = r.Output;
-			var exp = @"
-dir1\dir11\file.txt
-some data5
-
-dir1\file.txt
-some data3
-
-dir2\file.txt
-some data4
-
-file1.txt
-some data1
-
-file2.txt
-some data2
-".Replace('\\', Path.DirectorySeparatorChar);
+			var exp = Data1;
 
 			CompareDetails(exp, raw);
 
@@ -173,7 +167,7 @@ some data2
 			}
 			*/
 			// Console.WriteLine("LINE b:");
-			var lines2 = str.Split(new[] { '\n' });
+			var lines2 = str.Split(new[] {'\n'});
 			foreach (var line in lines2)
 			{
 				var abc = string.Join("", line.Select(x => ((int) x).ToString("X2")));
@@ -191,7 +185,7 @@ some data2
 			Assert.AreEqual(0, r.Code);
 
 			Assert.AreEqual(
-@"dir1/dir11/file.txt:some data5
+				@"dir1/dir11/file.txt:some data5
 dir1/file.txt:some data3
 dir2/file.txt:some data4
 file1.txt:some data1
@@ -266,6 +260,47 @@ some datacat2
 			Assert.AreEqual("some cat1\r\ndef\r", File.ReadAllText("file1.txt"));
 			Assert.AreEqual("some cat2\r\nabc\r\n", File.ReadAllText("file2.txt"));
 			Assert.AreEqual("some cat3\r\nqwe\n", File.ReadAllText($"dir1{s}file.txt"));
+		}
+
+		void ShouldFindAll(params string[] args)
+		{
+			var r = GreplEntry(args);
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = Data1;
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+		}
+
+		void ShouldFindNone(params string[] args)
+		{
+			var r = GreplEntry(args);
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = "";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+		}
+
+		[TestMethod]
+		public void Should_20_search_for_line_begin_end()
+		{
+			CreateData();
+
+			ShouldFindAll(@"some data\d", "-r");
+			ShouldFindAll(@"^some data\d$", "-r");
+			ShouldFindAll(@"^some data\d", "-r");
+			ShouldFindAll(@"some data\d$", "-r");
+
+			ShouldFindNone(@"$some data\d", "-r");
+			ShouldFindNone(@"some data\d^", "-r");
+			ShouldFindNone(@"$some data\d^", "-r");
 		}
 	}
 }

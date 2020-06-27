@@ -133,7 +133,7 @@ namespace Grepl
 				foreach (var regex in _regexes)
 				{
 					var printPosition = 0;
-					var matches = regex.Matches(line);
+					var matches = regex.Matches(line.TrimEnd('\r'));
 					if (matches.Any())
 					{
 						if (!filePrinted)
