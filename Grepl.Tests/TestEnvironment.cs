@@ -33,6 +33,27 @@ namespace Grepl.Tests
 			Assert.IsTrue(new Regex(@"(?m)st(?=\r?\n|$)").IsMatch("test"));
 		}
 
+		[TestMethod]
+		public void Should_escape_in_replace()
+		{
+			Assert.AreEqual("d$a", new Regex("at").Replace("data", "$"));
+			Assert.AreEqual("d$a", new Regex("at").Replace("data", "$$"));
+		}
+
+		[TestMethod]
+		public void Should_replace_to_group()
+		{
+			Assert.AreEqual("daa", new Regex("(a)t").Replace("data", "$1"));
+		}
+
+		[TestMethod]
+		public void Should_breakout_replacements()
+		{
+			var rx = new Regex("(a)t");
+			rx.Replace("data", "$1");
+			rx.ReplaceBreakout("data", "$1");
+			Assert.Inconclusive();
+		}
 
 	}
 }

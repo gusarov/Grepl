@@ -166,7 +166,9 @@ namespace Grepl
 				if (ReplaceTo != null)
 				{
 					replaced = regex.Replace(replaced, ReplaceTo);
+					// var rr = regex.ReplaceBreakout(replaced, ReplaceTo);
 				}
+
 			}
 
 			if (printFileName && matchLines.Any())
@@ -218,7 +220,14 @@ namespace Grepl
 						{
 							using (Color(ConsoleColor.Green))
 							{
-								Console.Write(ReplaceTo);
+								if (ReplaceTo.Contains('$'))
+								{
+									Console.Write("{preview_not_available_yet_but_you_can_save}");
+								}
+								else
+								{
+									Console.Write(ReplaceTo);
+								}
 							}
 						}
 

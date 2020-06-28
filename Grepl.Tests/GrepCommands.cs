@@ -443,5 +443,43 @@ cat
 
 		}
 
+		[TestMethod]
+		public void Should_30_replace_with_group_match()
+		{
+			CreateData();
+			var r = Grepl(@"dat(a\d)", "-r", "-$", "cat$1", "--save");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"
+dir1\dir11\file.txt
+some data5
+some cata5
+
+dir1\file.txt
+some data3
+some cata3
+
+dir2\file.txt
+some data4
+some cata4
+
+file1.txt
+some data1
+some cata1
+
+file2.txt
+some data2
+some cata2
+".Replace('\\', Path.DirectorySeparatorChar);
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+
+			Assert.AreEqual("some cat1\r\ndef\r", File.ReadAllText("file1.txt"));
+			Assert.AreEqual("some cat2\r\nabc\r\n", File.ReadAllText("file2.txt"));
+			Assert.AreEqual("some cat3\r\nqwe\n", File.ReadAllText($"dir1{_s}file.txt"));
+		}
 	}
 }
