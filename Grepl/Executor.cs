@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace Grepl
 {
@@ -11,6 +13,8 @@ namespace Grepl
 
 	public class Executor
 	{
+		private const int FileBufferSize = 16 * 1024;
+
 		public string ReplaceTo { get; set; }
 
 		public string Dir { get; set; }
@@ -122,7 +126,7 @@ namespace Grepl
 		class Line
 		{
 			public int Start; // not including cr lf
-			public int End; // not including cr lf, if the line feed at the end - mean there is 1 extra empty line
+			// public int End; // not including cr lf, if the line feed at the end - mean there is 1 extra empty line
 
 			public SortedDictionary<int, Match> Matches = new SortedDictionary<int, Match>();
 		}
@@ -134,13 +138,12 @@ namespace Grepl
 				throw new NotImplementedException("STDIN is not implemented yet");
 			}
 
-			var body = File.ReadAllText(file);
+			var body = ReadAllText(file, out var encoding);
 			var matchLines = new SortedDictionary<int, Line>();
 
 			var replaced = body;
 			foreach (var regex in _regexes)
 			{
-				var printPosition = 0;
 				var matches = regex.Matches(body);
 
 				// var currentlnStart = -2; // initially unknown
@@ -190,61 +193,110 @@ namespace Grepl
 				}
 
 				// var str = body.Substring(line.Key, eol);
-				var printPosition = line.Start;
-				foreach (var match in line.Matches.Values)
+				void print(bool replaced = false)
 				{
-					if (match.Index > printPosition)
+					var printPosition = line.Start;
+					foreach (var match in line.Matches.Values)
+					{
+						if (match.Index > printPosition)
+						{
+							using (Color(ConsoleColor.Gray))
+							{
+								Console.Write(body.Substring(printPosition, match.Index - printPosition));
+							}
+						}
+
+						if (!replaced)
+						{
+
+							using (Color(ConsoleColor.Red))
+							{
+								Console.Write(match.Value);
+							}
+						}
+						else
+						{
+							using (Color(ConsoleColor.Green))
+							{
+								Console.Write(ReplaceTo);
+							}
+						}
+
+						printPosition = match.Index + match.Length;
+					}
+
+					var len = eol + 1 - printPosition;
+					if (len >= 0 && printPosition < body.Length && (len - printPosition) < body.Length)
 					{
 						using (Color(ConsoleColor.Gray))
 						{
-							Console.Write(body.Substring(printPosition, match.Index - printPosition));
+							Console.WriteLine(body.Substring(printPosition, len));
 						}
 					}
-					using (Color(ConsoleColor.Red))
+					else
 					{
-						Console.Write(match.Value);
-					}
-
-					if (ReplaceTo != null)
-					{
-						using (Color(ConsoleColor.Green))
-						{
-							Console.Write(ReplaceTo);
-						}
-					}
-
-					printPosition = match.Index + match.Length;
-				}
-
-				var len = eol + 1 - printPosition;
-				if (len >=0 && printPosition < body.Length && (len - printPosition) < body.Length) 
-				{
-					using (Color(ConsoleColor.Gray))
-					{
-						Console.WriteLine(body.Substring(printPosition, len));
+						Console.WriteLine();
 					}
 				}
-				else
+
+				print();
+				if (ReplaceTo != null)
 				{
-					Console.WriteLine();
+					print(true);
 				}
 			}
 
-			if (Save)
+			if (Save && matchLines.Any())
 			{
 				// open existing file for replace!
 				using var fileStream = new FileStream(file,
 					FileMode.Open,
 					FileAccess.Write,
 					FileShare.Read,
-					16 * 1024,
+					FileBufferSize,
 					FileOptions.SequentialScan);
-				using var sw = new StreamWriter(fileStream); // todo preserve ENCODING!!
+
+#if DEBUG
+				Debug.WriteLine(encoding);
+				if (encoding is UTF8Encoding u8)
+				{
+					Debug.WriteLine(string.Join(" ", u8.Preamble
+						.ToArray().Select(x=>x.ToString("X2"))));
+				}
+				else if (encoding is UnicodeEncoding u16)
+				{
+					Debug.WriteLine(string.Join(" ", u16.Preamble
+						.ToArray().Select(x => x.ToString("X2"))));
+				}
+#endif
+
+				using var sw = new StreamWriter(fileStream, encoding); // todo preserve ENCODING!!
 				sw.Write(replaced);
 				sw.Flush();
 				fileStream.SetLength(fileStream.Position); // truncate!
 				// File.WriteAllText(file, replaced);
 			}
+		}
+
+		private static string ReadAllText(string file, out Encoding encoding)
+		{
+			// StreamReader(detectEncodingFromByteOrderMarks) have a bug.
+			// When UTF8 NO Bom file is passed, detected encoding have a preamble
+
+			string body;
+			using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, FileBufferSize, FileOptions.SequentialScan);
+			var buf = new byte[3];
+			var len = fs.Read(buf, 0,3);
+			fs.Position = 0;
+			using var sr = new StreamReader(file);
+			body = sr.ReadToEnd();
+			encoding = sr.CurrentEncoding;
+
+			if (Equals(encoding, Encoding.UTF8) && !(buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF))
+			{
+				encoding = new UTF8Encoding(false);
+			}
+			return body;
 		}
 	}
 }

@@ -33,5 +33,6 @@ namespace Grepl.Tests
 			Assert.IsTrue(new Regex(@"(?m)st(?=\r?\n|$)").IsMatch("test"));
 		}
 
+
 	}
 }
