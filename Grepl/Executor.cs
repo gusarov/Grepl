@@ -40,7 +40,8 @@ namespace Grepl
 
 			foreach (var pattern in Patterns)
 			{
-				_regexes.Add(new Regex(pattern, RegexOptions.Compiled));
+				var pattern2 = ImprovePattern(pattern);
+				_regexes.Add(new Regex(pattern2, RegexOptions.Compiled | RegexOptions.Multiline));
 			}
 
 			if (string.IsNullOrWhiteSpace(Dir))
@@ -75,14 +76,25 @@ namespace Grepl
 						: SearchOption.TopDirectoryOnly).OrderBy(x => x))
 					{
 						var subPath = file.Substring(Dir.Length + 1);
-						Process(subPath);
+						Process(subPath, printFileName: true);
 					}
 				}
 				else
 				{
-					Process(file: filePattern);
+					Process(file: filePattern, printFileName: false);
 				}
 			}
+		}
+
+		private string ImprovePattern(string pattern)
+		{
+			if (pattern.Length >=2 && pattern[^1] == '$' && pattern[^2] != '\\')
+			{
+				// $ should match CR LF if any, not just LF
+				return pattern.Substring(0, pattern.Length - 1) + @"(?=\r?\n|$)";
+			}
+
+			return pattern;
 		}
 
 		void PrintFileName(string file)
@@ -107,98 +119,131 @@ namespace Grepl
 			}
 		}
 
-		void Process(string file)
+		class Line
+		{
+			public int Start; // not including cr lf
+			public int End; // not including cr lf, if the line feed at the end - mean there is 1 extra empty line
+
+			public SortedDictionary<int, Match> Matches = new SortedDictionary<int, Match>();
+		}
+
+		void Process(string file, bool printFileName)
 		{
 			if (file == "-")
 			{
 				throw new NotImplementedException("STDIN is not implemented yet");
 			}
-			var filePrinted = false;
+
 			var body = File.ReadAllText(file);
-			var lines = body.Split('\n');
-			// var lastEndLine = body[^1] == '\n';
-			var sw = new StreamWriter(new MemoryStream());
-			bool lineEndScheduled = false;
-			foreach (var line in lines)
+			var matchLines = new SortedDictionary<int, Line>();
+
+			var replaced = body;
+			foreach (var regex in _regexes)
 			{
-				if (lineEndScheduled)
+				var printPosition = 0;
+				var matches = regex.Matches(body);
+
+				// var currentlnStart = -2; // initially unknown
+				foreach (Match match in matches)
 				{
-					if (Save)
+					// find the start of the line
+					var lineStart = body.LastIndexOf('\n', match.Index);
+					lineStart++;
+					if (!matchLines.TryGetValue(lineStart, out var line))
 					{
-						sw.Write('\n');
+						matchLines[lineStart] = line = new Line
+						{
+							Start = lineStart,
+						};
 					}
+
+					line.Matches.Add(match.Index, match);
 				}
 
-				var replaced = line;
-				foreach (var regex in _regexes)
+				if (ReplaceTo != null)
 				{
-					var printPosition = 0;
-					var matches = regex.Matches(line.TrimEnd('\r'));
-					if (matches.Any())
-					{
-						if (!filePrinted)
-						{
-							filePrinted = true;
-							PrintFileName(file);
-						}
-					}
-					foreach (Match match in matches)
-					{
-						if (match.Index > printPosition)
-						{
-							using (Color(ConsoleColor.Gray))
-							{
-								Console.Write(line.Substring(printPosition, match.Index - printPosition));
-							}
-						}
-						using (Color(ConsoleColor.Red))
-						{
-							Console.Write(match.Value);
-						}
-						if (ReplaceTo != null)
-						{
-							using (Color(ConsoleColor.Green))
-							{
-								Console.Write(ReplaceTo);
-							}
-						}
-						printPosition = match.Index + match.Length;
-					}
+					replaced = regex.Replace(replaced, ReplaceTo);
+				}
+			}
 
-					if (matches.Any())
+			if (printFileName && matchLines.Any())
+			{
+				PrintFileName(file);
+			}
+
+			foreach (var line in matchLines.Values)
+			{
+				var eol = body.IndexOf('\n', line.Start);
+				if (eol == -1)
+				{
+					eol = body.Length - 1; // jump to last char
+				}
+				else
+				{
+					eol--; // jump to char before \n
+				}
+
+				// Windows CR LF file
+				if (body[eol] == '\r')
+				{
+					eol--; // jump one more time
+				}
+
+				// var str = body.Substring(line.Key, eol);
+				var printPosition = line.Start;
+				foreach (var match in line.Matches.Values)
+				{
+					if (match.Index > printPosition)
 					{
 						using (Color(ConsoleColor.Gray))
 						{
-							Console.WriteLine(line.Substring(printPosition).TrimEnd('\r')); // already splitted by N, so  just in case get rid of R and use current console writeline for line ending
+							Console.Write(body.Substring(printPosition, match.Index - printPosition));
+						}
+					}
+					using (Color(ConsoleColor.Red))
+					{
+						Console.Write(match.Value);
+					}
+
+					if (ReplaceTo != null)
+					{
+						using (Color(ConsoleColor.Green))
+						{
+							Console.Write(ReplaceTo);
 						}
 					}
 
-					if (Save && ReplaceTo != null)
+					printPosition = match.Index + match.Length;
+				}
+
+				var len = eol + 1 - printPosition;
+				if (len >=0 && printPosition < body.Length && (len - printPosition) < body.Length) 
+				{
+					using (Color(ConsoleColor.Gray))
 					{
-						replaced = regex.Replace(replaced, ReplaceTo);
+						Console.WriteLine(body.Substring(printPosition, len));
 					}
 				}
-
-				if (Save)
+				else
 				{
-					sw.Write(replaced);
+					Console.WriteLine();
 				}
-
-				lineEndScheduled = true;
 			}
-
-			/*
-			if (lineEndScheduled)
-			{
-				// sw.Write('\n');
-				Console.WriteLine();
-			}
-			*/
 
 			if (Save)
 			{
+				// open existing file for replace!
+				using var fileStream = new FileStream(file,
+					FileMode.Open,
+					FileAccess.Write,
+					FileShare.Read,
+					16 * 1024,
+					FileOptions.SequentialScan);
+				using var sw = new StreamWriter(fileStream); // todo preserve ENCODING!!
+				sw.Write(replaced);
 				sw.Flush();
-				File.WriteAllBytes(file, ((MemoryStream) sw.BaseStream).ToArray());
+				fileStream.SetLength(fileStream.Position); // truncate!
+				// File.WriteAllText(file, replaced);
 			}
 		}
 	}

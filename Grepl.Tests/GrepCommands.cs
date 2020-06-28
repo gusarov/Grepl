@@ -110,6 +110,25 @@ some data2
 		}
 
 		[TestMethod]
+		public void Should_10_search_multiple_entries_per_line()
+		{
+			CreateData("2");
+			var r = GreplEntry("data", "file1.txt", "-r");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp =
+@"//2 aaaa aaaa data aaaa
+//4 cccc data bbbb data aaaa
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+
+		}
+
+		[TestMethod]
 		public void Should_10_SearchRecursivelyProc()
 		{
 			CreateData();
@@ -301,6 +320,24 @@ some datacat2
 			ShouldFindNone(@"$some data\d", "-r");
 			ShouldFindNone(@"some data\d^", "-r");
 			ShouldFindNone(@"$some data\d^", "-r");
+		}
+
+		[TestMethod]
+		public void Should_20_allow_dollar_in_pattern()
+		{
+			File.WriteAllText("file1.txt", "line1\r\nprice is 15$\r\nline2");
+
+			var r = Grepl(@"\d+\$", "file1.txt");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"price is 15$
+";
+
+			CompareDetails(exp, raw);
+
+
+			Assert.AreEqual(exp, raw);
 		}
 	}
 }
