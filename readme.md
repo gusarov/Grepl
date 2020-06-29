@@ -18,7 +18,7 @@ choco install grepl
 
 --OR--
 
-Download a zip file from release page
+Download a zip file from [release page](https://github.com/gusarov/Grepl/releases)
 
 ## Examples
 
