@@ -1,38 +1,141 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Grepl
 {
+	using Signature = Func<Match, object, string>;
+
 	static class ReplacementBreakout
 	{
-		public class Breakout
+		const BindingFlags _bf = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance;
+		static MethodInfo _toString = typeof(object).GetMethod("ToString");
+
+		static Signature GenerateMethod(Type typeVsb, MethodInfo rrReplacementImpl)
 		{
+			var d = new DynamicMethod("Capture", typeof(string), new[] { typeof(Match), typeof(object) }, true);
+			var g = d.GetILGenerator();
 
-		}
+			// ==== C# ====
+			/*
 
-		public static Breakout ReplaceBreakout(this Regex rx, string input, string replacement)
-		{
-			var bf = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance;
-			var wrr = rx.GetType().GetField("_replref", bf)?.GetValue(rx);
-			var rr = wrr?.GetType().GetProperty("Target", bf)?.GetValue(wrr);
-
-
-
-			foreach (var match in rx.Matches(input))
-			{
-				var sb = new StringBuilder();
-				rr?.GetType().GetMethod("ReplacementImpl", bf)?.Invoke(rr, new object[] {sb, match});
-				Console.WriteLine(sb);
+			static string Capture(Match match, RegexReplacement rr) {
+				ValueStringBuilder vsb = new ValueStringBuilder(256);
+				rr.ReplacementImpl(ref vsb, match);
+				return vsb.ToString();
 			}
 
+			*/
 
+			g.DeclareLocal(typeVsb); // ValueStringBuilder #0_vsb;
 
-			// var rr = typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexReplacement");
+			// ValueStringBuilder vsb = new ValueStringBuilder(256);
+			g.Emit(OpCodes.Ldc_I4, 256); // ValueStringBuilder initialBuffer size
+			g.Emit(OpCodes.Newobj, typeVsb.GetConstructor(new[] { typeof(int) }));
+			g.Emit(OpCodes.Stloc_0); // save new span ref to local variable #0
 
-			return null;
+			// rr.ReplacementImpl(ref vsb, match);
+			g.Emit(OpCodes.Ldarg_1); // rr
+			g.Emit(OpCodes.Ldloca_S, 0); // vsb
+			g.Emit(OpCodes.Ldarg_0); // match
+			g.Emit(OpCodes.Call, rrReplacementImpl);
+
+			// return vsb.ToString();
+			g.Emit(OpCodes.Ldloca_S, 0); // vsb
+			g.Emit(OpCodes.Constrained, typeVsb);
+			g.Emit(OpCodes.Callvirt, _toString);
+			g.Emit(OpCodes.Ret);
+
+			// g.Emit(OpCodes.Ldstr, "a");
+			// g.Emit(OpCodes.Ldstr, "a");
+			// g.Emit(OpCodes.Ret);
+
+			var act = (Signature)d.CreateDelegate(typeof(Signature));
+			return act;
+
+			/*
+
+			var args = methodInfo.GetParameters();
+			var argTypes = args.Select(x => x.ParameterType).ToArray();
+
+			var vsbPar = Expression.Parameter(argTypes[0], "vsb");
+			var matchPar = Expression.Parameter(argTypes[1], "match");
+
+			var call = Expression.Call(methodInfo, vsbPar, matchPar);
+			var lambda = Expression.Lambda<Action<MyType>>(call, p);
+			var action = lambda.Compile();
+
+			*/
+		}
+
+		static Signature _capture;
+
+		internal static string Call(MethodInfo methodInfo, Match match, Type typeRr, object rr, Type typeVsb)
+		{
+			if (methodInfo == null)
+			{
+				throw new ArgumentNullException(nameof(methodInfo));
+			}
+			if (match == null)
+			{
+				throw new ArgumentNullException(nameof(match));
+			}
+			if (typeRr == null)
+			{
+				throw new ArgumentNullException(nameof(typeRr));
+			}
+			if (rr == null)
+			{
+				throw new ArgumentNullException(nameof(rr));
+			}
+			if (typeVsb == null)
+			{
+				throw new ArgumentNullException(nameof(typeVsb));
+			}
+			if (_capture == null)
+			{
+				_capture = GenerateMethod(typeVsb, methodInfo);
+			}
+			return _capture(match, rr);
+		}
+
+		public static IEnumerable<string> ReplaceBreakout(this Regex rx, string input, string replacement)
+		{
+			var list = new List<string>();
+			foreach (Match match in rx.Matches(input))
+			{
+				list.Add(ReplaceBreakout(rx, match, input, replacement));
+			}
+			return list;
+		}
+
+		public static string ReplaceBreakout(this Regex rx, Match match, string input, string replacement)
+		{
+			for (int i = 0; i < 5; i++)
+			{
+				var wrr = rx.GetType().GetField("_replref", _bf)?.GetValue(rx);
+				var rr = wrr?.GetType().GetProperty("Target", _bf)?.GetValue(wrr);
+
+				if (rr == null)
+				{
+					// update wr cache
+					rx.Replace(input, replacement);
+					continue;
+				}
+
+				var typeVsb = typeof(Regex).Assembly.GetType("System.Text.ValueStringBuilder");
+
+				var mi = rr?.GetType().GetMethod("ReplacementImpl", _bf);
+				var rep = Call(mi, match, rr.GetType(), rr, typeVsb);
+				return rep;
+			}
+			throw new Exception("Unable to get RegexReplacement instance");
 		}
 
 		/*

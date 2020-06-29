@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -49,10 +50,12 @@ namespace Grepl.Tests
 		[TestMethod]
 		public void Should_breakout_replacements()
 		{
-			var rx = new Regex("(a)t");
-			rx.Replace("data", "$1");
-			rx.ReplaceBreakout("data", "$1");
-			Assert.Inconclusive();
+			var rx = new Regex(@"(a+)t");
+			var res = rx.Replace("daaatx", "_$1_");
+			Assert.AreEqual("d_aaa_x", res);
+			var arr = rx.ReplaceBreakout("daaatx", "_$1_");
+			Assert.AreEqual(1, arr.Count());
+			Assert.AreEqual("_aaa_", arr.First());
 		}
 
 	}

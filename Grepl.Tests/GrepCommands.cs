@@ -477,9 +477,9 @@ some cata2
 
 			Assert.AreEqual(exp, raw);
 
-			Assert.AreEqual("some cat1\r\ndef\r", File.ReadAllText("file1.txt"));
-			Assert.AreEqual("some cat2\r\nabc\r\n", File.ReadAllText("file2.txt"));
-			Assert.AreEqual("some cat3\r\nqwe\n", File.ReadAllText($"dir1{_s}file.txt"));
+			Assert.AreEqual("some cata1\r\ndef\r", File.ReadAllText("file1.txt"));
+			Assert.AreEqual("some cata2\r\nabc\r\n", File.ReadAllText("file2.txt"));
+			Assert.AreEqual("some cata3\r\nqwe\n", File.ReadAllText($"dir1{_s}file.txt"));
 		}
 	}
 }

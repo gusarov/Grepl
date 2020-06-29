@@ -128,7 +128,19 @@ namespace Grepl
 			public int Start; // not including cr lf
 			// public int End; // not including cr lf, if the line feed at the end - mean there is 1 extra empty line
 
-			public SortedDictionary<int, Match> Matches = new SortedDictionary<int, Match>();
+			public SortedDictionary<int, LineMatch> Matches = new SortedDictionary<int, LineMatch>();
+		}
+
+		class LineMatch
+		{
+			public LineMatch(Regex regex, Match match)
+			{
+				Regex = regex;
+				Match = match;
+			}
+
+			public Regex Regex { get; }
+			public Match Match { get; }
 		}
 
 		void Process(string file, bool printFileName)
@@ -160,7 +172,7 @@ namespace Grepl
 						};
 					}
 
-					line.Matches.Add(match.Index, match);
+					line.Matches.Add(match.Index, new LineMatch(regex, match));
 				}
 
 				if (ReplaceTo != null)
@@ -198,8 +210,10 @@ namespace Grepl
 				void print(bool replaced = false)
 				{
 					var printPosition = line.Start;
-					foreach (var match in line.Matches.Values)
+					foreach (var lineMatch in line.Matches.Values)
 					{
+						var match = lineMatch.Match;
+
 						if (match.Index > printPosition)
 						{
 							using (Color(ConsoleColor.Gray))
@@ -220,14 +234,8 @@ namespace Grepl
 						{
 							using (Color(ConsoleColor.Green))
 							{
-								if (ReplaceTo.Contains('$'))
-								{
-									Console.Write("{preview_not_available_yet_but_you_can_save}");
-								}
-								else
-								{
-									Console.Write(ReplaceTo);
-								}
+								var str = GetReplacementString(lineMatch.Regex, match, body, ReplaceTo);
+								Console.Write(str);
 							}
 						}
 
@@ -284,6 +292,27 @@ namespace Grepl
 				sw.Flush();
 				fileStream.SetLength(fileStream.Position); // truncate!
 				// File.WriteAllText(file, replaced);
+			}
+		}
+
+		private static string GetReplacementString(Regex regex, Match match, string input, string replacement)
+		{
+			if (replacement.Contains('$'))
+			{
+				try
+				{
+					var rep = ReplacementBreakout.ReplaceBreakout(regex, match, input, replacement);
+					return rep;
+				}
+				catch (Exception ex)
+				{
+					Debug.WriteLine(ex);
+					return "{preview_not_available_yet_but_you_can_save}";
+				}
+			}
+			else
+			{
+				return replacement;
 			}
 		}
 

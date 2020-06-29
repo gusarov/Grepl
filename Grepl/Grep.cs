@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -58,6 +59,7 @@ namespace Grepl
 							break;
 						case "-debug":
 							Shared.Instance.Debug = true;
+							Trace.Listeners.Add(new ConsoleTraceListener());
 							using (Color(ConsoleColor.DarkGray))
 							{
 								Console.WriteLine(string.Join(" ", args));
