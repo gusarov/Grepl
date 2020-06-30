@@ -73,6 +73,9 @@ namespace Grepl
 						case "-save":
 							executor.Save = true;
 							break;
+						case "-group":
+							executor.GroupMatchesByContext = true;
+							break;
 						case "-patterns-dir":
 							_patternsDirs.Add(args[++i]);
 							break;

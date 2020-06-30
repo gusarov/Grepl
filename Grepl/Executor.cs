@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Xml;
 
 namespace Grepl
@@ -23,6 +24,7 @@ namespace Grepl
 		public List<string> Patterns { get; } = new List<string>();
 		public bool Recursive { get; set; }
 		public bool Save { get; set; }
+		public bool GroupMatchesByContext { get; set; }
 
 		private readonly List<Regex> _regexes = new List<Regex>();
 
@@ -71,6 +73,10 @@ namespace Grepl
 				}
 			}
 
+			var groupedContext = GroupMatchesByContext
+				? new Dictionary<string, CaptureResult>()
+				: null;
+
 			foreach (var filePattern in Files)
 			{
 				if (filePattern.Contains('*') || filePattern.Contains('?'))
@@ -80,13 +86,56 @@ namespace Grepl
 						: SearchOption.TopDirectoryOnly).OrderBy(x => x))
 					{
 						var subPath = file.Substring(Dir.Length + 1);
-						Process(subPath, printFileName: true);
+						Process(subPath, printFileName: true, groupedContext);
 					}
 				}
 				else
 				{
 					Process(file: filePattern, printFileName: false);
 				}
+			}
+
+			if (groupedContext != null)
+			{
+				foreach (var kvp in groupedContext.OrderBy(x=>x.Value.FileNames.First()))
+				{
+					Console.WriteLine();
+					if (kvp.Value.FileNames.Count > 1)
+					{
+						using (Color(ConsoleColor.Magenta))
+						{
+							Console.WriteLine($"{kvp.Value.FileNames.Count} files:");
+						}
+					}
+					
+					foreach (var file in kvp.Value.FileNames)
+					{
+						PrintFileName(file);
+					}
+					// Console.WriteLine(kvp.Key);
+
+					// Save is already done, but colorful printing is not, so, preview one file
+					var orig = Save;
+					try
+					{
+						Save = false;
+						Process(kvp.Value.FileNames.First(), printFileName: false, ctxGroups: null);
+					}
+					finally
+					{
+						Save = orig;
+					}
+				}
+				/*
+				if (groupedContext.Count > 1)
+				{
+					// using (Color(ConsoleColor.Gray))
+					{
+						Console.WriteLine();
+						Console.WriteLine($"{groupedContext.Count} groups of similar context");
+					}
+				}
+				*/
 			}
 		}
 
@@ -103,7 +152,10 @@ namespace Grepl
 
 		void PrintFileName(string file)
 		{
-			Console.WriteLine();
+			if (!GroupMatchesByContext)
+			{
+				Console.WriteLine();
+			}
 
 			var fileName = Path.GetFileName(file);
 			var fileNameWithoutExt = Path.GetFileNameWithoutExtension(file);
@@ -143,8 +195,10 @@ namespace Grepl
 			public Match Match { get; }
 		}
 
-		void Process(string file, bool printFileName)
+		void Process(string file, bool printFileName, Dictionary<string, CaptureResult> ctxGroups = null)
 		{
+			var ctxKey = ctxGroups != null ? new StringBuilder() : null;
+
 			if (file == "-")
 			{
 				throw new NotImplementedException("STDIN is not implemented yet");
@@ -183,7 +237,7 @@ namespace Grepl
 
 			}
 
-			if (printFileName && matchLines.Any())
+			if (ctxKey == null && printFileName && matchLines.Any())
 			{
 				PrintFileName(file);
 			}
@@ -207,7 +261,7 @@ namespace Grepl
 				}
 
 				// var str = body.Substring(line.Key, eol);
-				void print(bool replaced = false)
+				void PrintLine(bool replaceMode = false)
 				{
 					var printPosition = line.Start;
 					foreach (var lineMatch in line.Matches.Values)
@@ -216,27 +270,16 @@ namespace Grepl
 
 						if (match.Index > printPosition)
 						{
-							using (Color(ConsoleColor.Gray))
-							{
-								Console.Write(body.Substring(printPosition, match.Index - printPosition));
-							}
+							Print(ctxKey, ConsoleColor.Gray, body.Substring(printPosition, match.Index - printPosition));
 						}
 
-						if (!replaced)
+						if (!replaceMode)
 						{
-
-							using (Color(ConsoleColor.Red))
-							{
-								Console.Write(match.Value);
-							}
+							Print(ctxKey, ConsoleColor.Red, match.Value);
 						}
 						else
 						{
-							using (Color(ConsoleColor.Green))
-							{
-								var str = GetReplacementString(lineMatch.Regex, match, body, ReplaceTo);
-								Console.Write(str);
-							}
+							Print(ctxKey, ConsoleColor.Green, GetReplacementString(lineMatch.Regex, match, body, ReplaceTo));
 						}
 
 						printPosition = match.Index + match.Length;
@@ -245,21 +288,18 @@ namespace Grepl
 					var len = eol + 1 - printPosition;
 					if (len >= 0 && printPosition < body.Length && (len - printPosition) < body.Length)
 					{
-						using (Color(ConsoleColor.Gray))
-						{
-							Console.WriteLine(body.Substring(printPosition, len));
-						}
+						Print(ctxKey, ConsoleColor.Gray, body.Substring(printPosition, len) + Environment.NewLine);
 					}
 					else
 					{
-						Console.WriteLine();
+						Print(ctxKey, null, Environment.NewLine);
 					}
 				}
 
-				print();
+				PrintLine();
 				if (ReplaceTo != null)
 				{
-					print(true);
+					PrintLine(true);
 				}
 			}
 
@@ -291,7 +331,39 @@ namespace Grepl
 				sw.Write(replaced);
 				sw.Flush();
 				fileStream.SetLength(fileStream.Position); // truncate!
-				// File.WriteAllText(file, replaced);
+			}
+
+			if (ctxKey != null && ctxKey.Length > 0)
+			{
+				var key = ctxKey.ToString();
+				if (!ctxGroups.TryGetValue(key, out var capture))
+				{
+					ctxGroups[key] = capture = new CaptureResult();
+				}
+
+				capture.FileNames.Add(file);
+			}
+		}
+
+		void Print(StringBuilder sb, ConsoleColor? color, string msg)
+		{
+			if (sb != null)
+			{
+				sb.Append(msg);
+			}
+			else
+			{
+				if (color == null)
+				{
+					Console.Write(msg);
+				}
+				else
+				{
+					using (Color(color.Value))
+					{
+						Console.Write(msg);
+					}
+				}
 			}
 		}
 
