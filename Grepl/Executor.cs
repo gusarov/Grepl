@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -60,7 +61,7 @@ namespace Grepl
 				throw new Exception("Directory does not exists");
 			}
 
-			if (Files.Count == 0 && Recursive)
+			if (Files.Count == 0)
 			{
 				if (Recursive)
 				{
@@ -199,12 +200,18 @@ namespace Grepl
 		{
 			var ctxKey = ctxGroups != null ? new StringBuilder() : null;
 
+			Encoding encoding;
+			string body;
 			if (file == "-")
 			{
-				throw new NotImplementedException("STDIN is not implemented yet");
+				body = System.Console.In.ReadToEnd();
+				encoding = System.Console.InputEncoding;
+			}
+			else
+			{
+				body = ReadAllText(file, out encoding);
 			}
 
-			var body = ReadAllText(file, out var encoding);
 			var matchLines = new SortedDictionary<int, Line>();
 
 			var replaced = body;

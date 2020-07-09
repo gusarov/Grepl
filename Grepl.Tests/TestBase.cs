@@ -42,12 +42,19 @@ namespace Grepl.Tests
 
 		public (int Code, string Output, string Error) GreplProc(params string[] args)
 		{
+			return GreplProc(null, args);
+		}
+
+		public (int Code, string Output, string Error) GreplProc(Action<StreamWriter> stdInput, params string[] args)
+		{
 			var slnDir = _slnDir.Value;
-			var psi = new ProcessStartInfo("dotnet", $"run --project {Path.Combine(slnDir, "Grepl\\Grepl.csproj")} -- {string.Join(" ", args)}")
+			var add = Debugger.IsAttached ? " --debugger" : "";
+			var psi = new ProcessStartInfo("dotnet", $"run --project {Path.Combine(slnDir, "Grepl\\Grepl.csproj")} -- {string.Join(" ", args) + add}")
 			{
 				UseShellExecute = false,
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
+				RedirectStandardInput = true,
 			};
 			Console.WriteLine($"{psi.FileName} {psi.Arguments}");
 			var p = Process.Start(psi);
@@ -57,6 +64,7 @@ namespace Grepl.Tests
 			// var error = "";
 			// p.OutputDataReceived += (s, e) => output += e.Data;
 			// p.ErrorDataReceived += (s, e) => error += e.Data;
+			stdInput?.Invoke(p.StandardInput);
 			p.WaitForExit();
 			var output = p.StandardOutput.ReadToEnd();
 			var error = p.StandardError.ReadToEnd();

@@ -481,5 +481,28 @@ some cata2
 			Assert.AreEqual("some cata2\r\nabc\r\n", File.ReadAllText("file2.txt"));
 			Assert.AreEqual("some cata3\r\nqwe\n", File.ReadAllText($"dir1{_s}file.txt"));
 		}
+
+		[TestMethod]
+		public void Should_30_read_from_console()
+		{
+			CreateData();
+			var r = GreplProc(stdIn=>
+			{
+				stdIn.WriteLine("abc\\abc.csproj");
+				stdIn.WriteLine("abc\\abc.xxx");
+				stdIn.WriteLine("def\\def.csproj");
+				stdIn.Close();
+			}, @".*\.csproj");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"abc\abc.csproj
+def\def.csproj
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+		}
 	}
 }

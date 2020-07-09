@@ -9,6 +9,7 @@ namespace Grepl
 	static class Tools
 	{
 		public static TextWriter Console = WConsole.Out;
+		// public static TextReader StdInput = WConsole.In;
 
 		public static IDisposable Color(ConsoleColor color)
 		{

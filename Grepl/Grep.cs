@@ -57,6 +57,12 @@ namespace Grepl
 						case "f":
 							patternsToLoad.Add(args[++i]);
 							break;
+						case "-debugger":
+							if (!Debugger.IsAttached)
+							{
+								Debugger.Launch();
+							}
+							break;
 						case "-debug":
 							Shared.Instance.Debug = true;
 							Trace.Listeners.Add(new ConsoleTraceListener());
