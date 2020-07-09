@@ -113,7 +113,7 @@ some data2
 		public void Should_10_search_multiple_entries_per_line()
 		{
 			CreateData("2");
-			var r = GreplEntry("data", "file1.txt", "-r");
+			var r = GreplEntry("data", "file1.txt");
 			Assert.AreEqual(0, r.Code);
 
 			var raw = r.Output;
@@ -292,6 +292,59 @@ some cat2
 			Assert.AreEqual("some cat1\r\ndef\r", File.ReadAllText("file1.txt"));
 			Assert.AreEqual("some cat2\r\nabc\r\n", File.ReadAllText("file2.txt"));
 			Assert.AreEqual("some cat3\r\nqwe\n", File.ReadAllText($"dir1{_s}file.txt"));
+		}
+
+
+		[TestMethod]
+		public void Should_30_group_file_sets_on_search()
+		{
+			CreateData("3");
+			var r = Grepl("bbb", "-r", "--group");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"
+2 files:
+file1.txt
+file2.txt
+//2 bbbb
+
+file3.txt
+//2 xbbb
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+		}
+
+		[TestMethod]
+		public void Should_30_replace_and_save_when_groupping_enabled()
+		{
+			CreateData("3");
+			var r = Grepl("bbb", "-r", "-$", "ttt", "--save", "--group");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"
+2 files:
+file1.txt
+file2.txt
+//2 bbbb
+//2 tttb
+
+file3.txt
+//2 xbbb
+//2 xttt
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+
+			Assert.AreEqual("//1 aaaa\n//2 tttb\n//3 cccc\n", File.ReadAllText("file1.txt").Replace("\r", ""), "file1");
+			Assert.AreEqual("//1 aaaa\n//2 tttb\n//3 cccc\n", File.ReadAllText("file2.txt").Replace("\r", ""), "file2");
+			Assert.AreEqual("//1 aaaa\n//2 xttt\n//3 cccc\n", File.ReadAllText("file3.txt").Replace("\r", ""), "file3");
 		}
 
 		void ShouldFindAll(params string[] args)

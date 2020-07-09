@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
+using Grepl.Model;
 
 namespace Grepl
 {
@@ -75,12 +76,12 @@ namespace Grepl
 			}
 
 			var groupedContext = GroupMatchesByContext
-				? new Dictionary<string, CaptureResult>()
+				? new Dictionary<ColoredMessage, CaptureResult>()
 				: null;
 
 			foreach (var filePattern in Files)
 			{
-				if (filePattern.Contains('*') || filePattern.Contains('?'))
+				if (filePattern.Contains('*') || filePattern.Contains('?') || Recursive)
 				{
 					foreach (var file in Directory.GetFiles(Dir, filePattern, Recursive
 						? SearchOption.AllDirectories
@@ -113,19 +114,8 @@ namespace Grepl
 					{
 						PrintFileName(file);
 					}
-					// Console.WriteLine(kvp.Key);
 
-					// Save is already done, but colorful printing is not, so, preview one file
-					var orig = Save;
-					try
-					{
-						Save = false;
-						Process(kvp.Value.FileNames.First(), printFileName: false, ctxGroups: null);
-					}
-					finally
-					{
-						Save = orig;
-					}
+					kvp.Key.ToConsole();
 				}
 				/*
 				if (groupedContext.Count > 1)
@@ -196,21 +186,11 @@ namespace Grepl
 			public Match Match { get; }
 		}
 
-		void Process(string file, bool printFileName, Dictionary<string, CaptureResult> ctxGroups = null)
+		void Process(string file, bool printFileName, Dictionary<ColoredMessage, CaptureResult> ctxGroups = null)
 		{
-			var ctxKey = ctxGroups != null ? new StringBuilder() : null;
+			var output = new ColoredMessage();
 
-			Encoding encoding;
-			string body;
-			if (file == "-")
-			{
-				body = System.Console.In.ReadToEnd();
-				encoding = System.Console.InputEncoding;
-			}
-			else
-			{
-				body = ReadAllText(file, out encoding);
-			}
+			var body = ReadAllText(file, out var encoding);
 
 			var matchLines = new SortedDictionary<int, Line>();
 
@@ -244,7 +224,7 @@ namespace Grepl
 
 			}
 
-			if (ctxKey == null && printFileName && matchLines.Any())
+			if (ctxGroups == null && printFileName && matchLines.Any())
 			{
 				PrintFileName(file);
 			}
@@ -277,16 +257,16 @@ namespace Grepl
 
 						if (match.Index > printPosition)
 						{
-							Print(ctxKey, ConsoleColor.Gray, body.Substring(printPosition, match.Index - printPosition));
+							output.Write(ConsoleColor.Gray, body.Substring(printPosition, match.Index - printPosition));
 						}
 
 						if (!replaceMode)
 						{
-							Print(ctxKey, ConsoleColor.Red, match.Value);
+							output.Write(ConsoleColor.Red, match.Value);
 						}
 						else
 						{
-							Print(ctxKey, ConsoleColor.Green, GetReplacementString(lineMatch.Regex, match, body, ReplaceTo));
+							output.Write(ConsoleColor.Green, GetReplacementString(lineMatch.Regex, match, body, ReplaceTo));
 						}
 
 						printPosition = match.Index + match.Length;
@@ -295,11 +275,11 @@ namespace Grepl
 					var len = eol + 1 - printPosition;
 					if (len >= 0 && printPosition < body.Length && (len - printPosition) < body.Length)
 					{
-						Print(ctxKey, ConsoleColor.Gray, body.Substring(printPosition, len) + Environment.NewLine);
+						output.Write(ConsoleColor.Gray, body.Substring(printPosition, len) + Environment.NewLine);
 					}
 					else
 					{
-						Print(ctxKey, null, Environment.NewLine);
+						output.Write(null, Environment.NewLine);
 					}
 				}
 
@@ -320,57 +300,28 @@ namespace Grepl
 					FileBufferSize,
 					FileOptions.SequentialScan);
 
-#if DEBUG
-				Debug.WriteLine(encoding);
-				if (encoding is UTF8Encoding u8)
-				{
-					Debug.WriteLine(string.Join(" ", u8.Preamble
-						.ToArray().Select(x=>x.ToString("X2"))));
-				}
-				else if (encoding is UnicodeEncoding u16)
-				{
-					Debug.WriteLine(string.Join(" ", u16.Preamble
-						.ToArray().Select(x => x.ToString("X2"))));
-				}
-#endif
-
-				using var sw = new StreamWriter(fileStream, encoding); // todo preserve ENCODING!!
+				using var sw = new StreamWriter(fileStream, encoding);
 				sw.Write(replaced);
 				sw.Flush();
 				fileStream.SetLength(fileStream.Position); // truncate!
 			}
 
-			if (ctxKey != null && ctxKey.Length > 0)
+			if (ctxGroups != null)
 			{
-				var key = ctxKey.ToString();
-				if (!ctxGroups.TryGetValue(key, out var capture))
+				// context grouping... will print later
+				if (output.Parts.Count > 0)
 				{
-					ctxGroups[key] = capture = new CaptureResult();
+					if (!ctxGroups.TryGetValue(output, out var capture))
+					{
+						ctxGroups[output] = capture = new CaptureResult();
+					}
+					capture.FileNames.Add(file);
 				}
-
-				capture.FileNames.Add(file);
-			}
-		}
-
-		void Print(StringBuilder sb, ConsoleColor? color, string msg)
-		{
-			if (sb != null)
-			{
-				sb.Append(msg);
 			}
 			else
 			{
-				if (color == null)
-				{
-					Console.Write(msg);
-				}
-				else
-				{
-					using (Color(color.Value))
-					{
-						Console.Write(msg);
-					}
-				}
+				// no context grouping, print directly now
+				output.ToConsole();
 			}
 		}
 
@@ -397,6 +348,13 @@ namespace Grepl
 
 		private static string ReadAllText(string file, out Encoding encoding)
 		{
+			if (file == "-")
+			{
+				var res = System.Console.In.ReadToEnd();
+				encoding = System.Console.InputEncoding;
+				return res;
+			}
+
 			// StreamReader(detectEncodingFromByteOrderMarks) have a bug.
 			// When UTF8 NO Bom file is passed, detected encoding have a preamble
 
