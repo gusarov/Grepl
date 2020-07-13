@@ -310,7 +310,7 @@ namespace Grepl
 				}
 			}
 
-			if (Save && matchLines.Any())
+			if (Save && matchLines.Any() && body != replaced)
 			{
 				// open existing file for replace!
 				using var fileStream = new FileStream(file,
