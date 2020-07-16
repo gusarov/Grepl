@@ -14,8 +14,19 @@ namespace Grepl
 {
 	using static Tools;
 
+	class OutputControlOptions
+	{
+		/// <summary>
+		/// L
+		/// file names only, no content
+		/// </summary>
+		public bool FilesWithMatches { get; set; }
+	}
+
 	public class Executor
 	{
+		internal OutputControlOptions OutputControlOptions { get; } = new OutputControlOptions();
+
 		private const int FileBufferSize = 16 * 1024;
 
 		public string ReplaceTo { get; set; }
@@ -143,7 +154,7 @@ namespace Grepl
 
 		void PrintFileName(string file)
 		{
-			if (!GroupMatchesByContext)
+			if (!GroupMatchesByContext && !OutputControlOptions.FilesWithMatches)
 			{
 				Console.WriteLine();
 			}
@@ -229,64 +240,70 @@ namespace Grepl
 				PrintFileName(file);
 			}
 
-			foreach (var line in matchLines.Values)
+			if (!OutputControlOptions.FilesWithMatches)
 			{
-				var eol = body.IndexOf('\n', line.Start);
-				if (eol == -1)
-				{
-					eol = body.Length - 1; // jump to last char
-				}
-				else
-				{
-					eol--; // jump to char before \n
-				}
 
-				// Windows CR LF file
-				if (body[eol] == '\r')
+				foreach (var line in matchLines.Values)
 				{
-					eol--; // jump one more time
-				}
-
-				// var str = body.Substring(line.Key, eol);
-				void PrintLine(bool replaceMode = false)
-				{
-					var printPosition = line.Start;
-					foreach (var lineMatch in line.Matches.Values)
+					var eol = body.IndexOf('\n', line.Start);
+					if (eol == -1)
 					{
-						var match = lineMatch.Match;
-
-						if (match.Index > printPosition)
-						{
-							output.Write(ConsoleColor.Gray, body.Substring(printPosition, match.Index - printPosition));
-						}
-
-						if (!replaceMode)
-						{
-							output.Write(ConsoleColor.Red, match.Value);
-						}
-						else
-						{
-							output.Write(ConsoleColor.Green, GetReplacementString(lineMatch.Regex, match, body, ReplaceTo));
-						}
-
-						printPosition = match.Index + match.Length;
-					}
-
-					var len = eol + 1 - printPosition;
-					if (len >= 0 && printPosition < body.Length && (len - printPosition) < body.Length)
-					{
-						output.Write(ConsoleColor.Gray, body.Substring(printPosition, len) + Environment.NewLine);
+						eol = body.Length - 1; // jump to last char
 					}
 					else
 					{
-						output.Write(null, Environment.NewLine);
+						eol--; // jump to char before \n
 					}
-				}
 
-				PrintLine();
-				if (ReplaceTo != null)
-				{
-					PrintLine(true);
+					// Windows CR LF file
+					if (body[eol] == '\r')
+					{
+						eol--; // jump one more time
+					}
+
+					// var str = body.Substring(line.Key, eol);
+					void PrintLine(bool replaceMode = false)
+					{
+						var printPosition = line.Start;
+						foreach (var lineMatch in line.Matches.Values)
+						{
+							var match = lineMatch.Match;
+
+							if (match.Index > printPosition)
+							{
+								output.Write(ConsoleColor.Gray,
+									body.Substring(printPosition, match.Index - printPosition));
+							}
+
+							if (!replaceMode)
+							{
+								output.Write(ConsoleColor.Red, match.Value);
+							}
+							else
+							{
+								output.Write(ConsoleColor.Green,
+									GetReplacementString(lineMatch.Regex, match, body, ReplaceTo));
+							}
+
+							printPosition = match.Index + match.Length;
+						}
+
+						var len = eol + 1 - printPosition;
+						if (len >= 0 && printPosition < body.Length && (len - printPosition) < body.Length)
+						{
+							output.Write(ConsoleColor.Gray, body.Substring(printPosition, len) + Environment.NewLine);
+						}
+						else
+						{
+							output.Write(null, Environment.NewLine);
+						}
+					}
+
+					PrintLine();
+					if (ReplaceTo != null)
+					{
+						PrintLine(true);
+					}
 				}
 			}
 
@@ -321,7 +338,10 @@ namespace Grepl
 			else
 			{
 				// no context grouping, print directly now
-				output.ToConsole();
+				if (!OutputControlOptions.FilesWithMatches)
+				{
+					output.ToConsole();
+				}
 			}
 		}
 

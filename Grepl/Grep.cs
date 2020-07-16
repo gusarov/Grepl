@@ -76,6 +76,10 @@ namespace Grepl
 								}
 							}
 							break;
+						case "-files-with-matches":
+						case "l":
+							executor.OutputControlOptions.FilesWithMatches = true;
+							break;
 						case "-save":
 							executor.Save = true;
 							break;
@@ -126,6 +130,18 @@ expression.rx:
 				else
 				{
 					listRemaining.AddLast(arg);
+				}
+			}
+
+			if (executor.OutputControlOptions.FilesWithMatches)
+			{
+				if (executor.GroupMatchesByContext)
+				{
+					using (Color(ConsoleColor.Red))
+					{
+						Console.WriteLine("Grouping by context and not displaying file content does not make sense. Consider only one of those options: -l or --group");
+						return 1;
+					}
 				}
 			}
 

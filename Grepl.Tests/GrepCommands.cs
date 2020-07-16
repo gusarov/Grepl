@@ -256,6 +256,46 @@ some cat2
 		}
 
 		[TestMethod]
+		public void Should_20_replace_to_empty()
+		{
+			CreateData();
+			var r = Grepl("data", "-r", "-$", "");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"
+dir1\dir11\file.txt
+some data5
+some 5
+
+dir1\file.txt
+some data3
+some 3
+
+dir2\file.txt
+some data4
+some 4
+
+file1.txt
+some data1
+some 1
+
+file2.txt
+some data2
+some 2
+".Replace('\\', Path.DirectorySeparatorChar);
+
+			CompareDetails(exp, raw);
+
+
+			Assert.AreEqual(exp, raw);
+
+			Assert.AreEqual("some data1\r\ndef\r", File.ReadAllText("file1.txt"));
+			Assert.AreEqual("some data2\r\nabc\r\n", File.ReadAllText("file2.txt"));
+			Assert.AreEqual("some data3\r\nqwe\n", File.ReadAllText($"dir1{_s}file.txt"));
+		}
+
+		[TestMethod]
 		public void Should_30_ReplaceAndSave()
 		{
 			CreateData();
@@ -556,6 +596,69 @@ def\def.csproj
 			CompareDetails(exp, raw);
 
 			Assert.AreEqual(exp, raw);
+		}
+
+		[TestMethod]
+		public void Should_30_show_only_file_name()
+		{
+			CreateData("3");
+
+			var r = GreplProc("bbbb", "-l", "*");
+
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"file1.txt
+file2.txt
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+		}
+
+		[TestMethod]
+		public void Should_30_show_only_file_name_replace()
+		{
+			CreateData("3");
+
+			var r = GreplProc("bbbb", "-l", "*", "-$", "xx");
+
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"file1.txt
+file2.txt
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+		}
+
+
+		[TestMethod]
+		public void Should_30_show_only_file_name_replace_save()
+		{
+			CreateData("3");
+
+			var r = GreplProc("bbbb", "-l", "*", "-$", "xx", "--save");
+
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"file1.txt
+file2.txt
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+
+			Assert.AreEqual("//1 aaaa\n//2 xx\n//3 cccc\n", File.ReadAllText("file1.txt").Replace("\r", ""), "file1");
+			Assert.AreEqual("//1 aaaa\n//2 xx\n//3 cccc\n", File.ReadAllText("file2.txt").Replace("\r", ""), "file2");
+			Assert.AreEqual("//1 aaaa\n//2 xbbb\n//3 cccc\n", File.ReadAllText("file3.txt").Replace("\r", ""), "file3");
+
 		}
 	}
 }
