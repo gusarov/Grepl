@@ -11,6 +11,47 @@ jobs:
     inputs:
       packageType: 'sdk'
       version: '3.1.x'
+
+  - powershell: |
+      function Edit-XmlNodes {
+       param (
+           [string] $file = $(throw "file is a required parameter"),
+           [string] $xpath = $(throw "xpath is a required parameter"),
+           [string] $value = $(throw "value is a required parameter")
+       )
+       [System.IO.Directory]::SetCurrentDirectory((Get-Location))
+       $doc = [xml](Get-Content $file)
+       "edit $file $xpath $value"
+       $namespace = $doc.DocumentElement.NamespaceURI
+       "namespace = $namespace"
+       $ns = New-Object System.Xml.XmlNamespaceManager($doc.NameTable)
+       $ns.AddNamespace("ns", $namespace)
+       $nodes = $doc.SelectNodes($xpath, $ns)
+       foreach ($node in $nodes) {
+           "node found " + $node
+           if ($node -ne $null) {
+               if ($node.NodeType -eq "Element") {
+                   "node inner replaced to " + $value
+                   $node.InnerXml = $value
+               }
+               else {
+                   "node value replaced to " + $value
+                   $node.Value = $value
+               }
+           }
+       }
+       $doc.save($file)
+       "done..."
+      }
+      $ver=$env:BUILD_SOURCEBRANCHNAME
+      $ver = $ver.TrimStart('v')
+      "ver="
+      $v = [Version]"0.0.0"
+      if ([System.Version]::TryParse($ver, [ref] $v)) {
+        Edit-XmlNodes "grepl\grepl.csproj" "//ns:Version" $ver
+      }
+    displayName: 'Update Version'
+
   - task: DotNetCoreCLI@2
     displayName: Build
     inputs:
@@ -22,6 +63,14 @@ jobs:
     inputs:
       command: test
       arguments: '--configuration $(BuildConfiguration)'
+
+  - task: DotNetCoreCLI@2
+    displayName: Pack as tool
+    inputs:
+      command: pack
+      packagesToPack: grepl/grepl.csproj
+      configuration: '$(BuildConfiguration)'
+
   - task: DotNetCoreCLI@2
     displayName: Publish win-x64
     inputs:
@@ -92,6 +141,7 @@ jobs:
       Contents: 'Grepl/bin/Release/netcoreapp3.1/osx-x64/publish/**'
       TargetFolder: '$(Build.ArtifactStagingDirectory)/osx-x64'
       flattenFolders: true
+
   - task: PublishBuildArtifacts@1
     inputs:
       PathtoPublish: '$(Build.ArtifactStagingDirectory)'
