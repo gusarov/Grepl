@@ -10,15 +10,19 @@ This tool is inspired by JGS PowerGrep but due to cli nature it is also an atte
 
 ## Downloading and Installing
 
-_TBD_
-
+* dotnet:
 ```
-choco install grepl
+dotnet tool install -g grepl
 ```
 
---OR--
+* Chocolatey (Windows only):
+<br>_approval/review still pending since 2020-06-25, so only first version is available_
+```
+choco install grepl --version=0.1.2
+```
 
-Download a zip file from [release page](https://github.com/gusarov/Grepl/releases)
+* Manually
+Download a zip/gz file from [release page](https://github.com/gusarov/Grepl/releases)
 
 ## Examples
 
