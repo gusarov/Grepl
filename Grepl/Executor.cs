@@ -33,10 +33,18 @@ namespace Grepl
 		public List<string> ExcludeGlobs { get; } = new List<string>();
 	}
 
+	class ContextCaptureOptions
+	{
+		public int Before { get; set; }
+		public int After { get; set; }
+		public int ContextAround { get; set; }
+	}
+
 	public class Executor
 	{
 		internal OutputControlOptions OutputControlOptions { get; } = new OutputControlOptions();
 		internal FilesSelectorOptions FilesSelectorOptions { get; } = new FilesSelectorOptions();
+		internal ContextCaptureOptions ContextCaptureOptions { get; } = new ContextCaptureOptions();
 		private bool Recursive => FilesSelectorOptions.Recursive;
 
 		private const int FileBufferSize = 16 * 1024;
@@ -290,6 +298,49 @@ namespace Grepl
 
 			if (!OutputControlOptions.FilesWithMatches)
 			{
+				// fill context lines
+				if (ContextCaptureOptions.ContextAround != 0
+				    || ContextCaptureOptions.Before != 0
+				    || ContextCaptureOptions.After != 0)
+				{
+					foreach (var line in matchLines.Values.ToArray())
+					{
+						var prev = line.Start;
+						var before = Math.Max(ContextCaptureOptions.Before, ContextCaptureOptions.ContextAround);
+						for (; before > 0; before--)
+						{
+							if (prev >= 2)
+							{
+								prev = body.LastIndexOf('\n', prev - 2);
+								prev++;
+								if (!matchLines.ContainsKey(prev))
+								{
+									matchLines[prev] = new Line
+									{
+										Start = prev,
+									};
+								}
+							}
+						}
+						prev = line.Start;
+						var after = Math.Max(ContextCaptureOptions.After, ContextCaptureOptions.ContextAround);
+						for (; after > 0; after--)
+						{
+							prev = body.IndexOf('\n', prev);
+							if (prev > 0)
+							{
+								prev++;
+								if (!matchLines.ContainsKey(prev))
+								{
+									matchLines[prev] = new Line
+									{
+										Start = prev,
+									};
+								}
+							}
+						}
+					}
+				}
 
 				foreach (var line in matchLines.Values)
 				{
