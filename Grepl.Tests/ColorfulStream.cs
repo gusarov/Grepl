@@ -33,6 +33,7 @@ namespace Grepl.Tests
 			}
 			_sbRaw.Append(value);
 			_sbColored.Append(value);
+			Console.Write(value);
 		}
 	}
 }

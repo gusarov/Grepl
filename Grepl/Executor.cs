@@ -9,6 +9,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
 using Grepl.Model;
+using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 
 namespace Grepl
 {
@@ -23,19 +25,29 @@ namespace Grepl
 		public bool FilesWithMatches { get; set; }
 	}
 
+	class FilesSelectorOptions
+	{
+		// public bool BinAsText { get; set; }
+		public bool Recursive { get; set; }
+		public List<string> IncludeGlobs { get; } = new List<string>();
+		public List<string> ExcludeGlobs { get; } = new List<string>();
+	}
+
 	public class Executor
 	{
 		internal OutputControlOptions OutputControlOptions { get; } = new OutputControlOptions();
+		internal FilesSelectorOptions FilesSelectorOptions { get; } = new FilesSelectorOptions();
+		private bool Recursive => FilesSelectorOptions.Recursive;
 
 		private const int FileBufferSize = 16 * 1024;
 
 		public string ReplaceTo { get; set; }
 
 		public string Dir { get; set; }
-		public List<string> Files { get; } = new List<string>();
 
+		public List<string> Files => FilesSelectorOptions.IncludeGlobs;
 		public List<string> Patterns { get; } = new List<string>();
-		public bool Recursive { get; set; }
+
 		public bool Save { get; set; }
 		public bool GroupMatchesByContext { get; set; }
 
@@ -77,7 +89,7 @@ namespace Grepl
 			{
 				if (Recursive)
 				{
-					Files.Add("*.*");
+					Files.Add("**/*");
 				}
 				else
 				{
@@ -90,21 +102,57 @@ namespace Grepl
 				? new Dictionary<ColoredMessage, CaptureResult>()
 				: null;
 
-			foreach (var filePattern in Files)
+
+			if (Files.Count == 1 && (File.Exists(Files[0]) || Files[0] == "-"))
 			{
-				if (filePattern.Contains('*') || filePattern.Contains('?') || Recursive)
+				// single
+				Process(file: Files[0], printFileName: false);
+			}
+			else
+			{
+				var di = new DirectoryInfo(Dir);
+
+				var includes = Files
+						.Select(x => new
+						{
+							IsFullPath = Path.GetFullPath(x) == x,
+							Pattern = x,
+						})
+						.Select(x =>
+							x.IsFullPath
+								? x.Pattern.Substring(di.FullName.Length + 1)
+								: (Recursive
+									? (x.Pattern.StartsWith("**/") ? x.Pattern : "**/" + x.Pattern)
+									: x.Pattern)
+						)
+					;
+
+				var excludes = FilesSelectorOptions.ExcludeGlobs
+						.Select(x => new
+						{
+							IsFullPath = Path.GetFullPath(x) == x,
+							Pattern = x,
+						})
+						.Select(x =>
+							x.IsFullPath
+								? x.Pattern.Substring(di.FullName.Length + 1)
+								: x.Pattern
+						)
+					;
+
+				var matcher = new Matcher();
+				matcher.AddIncludePatterns(includes);
+				matcher.AddExcludePatterns(excludes);
+
+				var res = matcher.Execute(new DirectoryInfoWrapper(di));
+				foreach (var filePatternMatch in res.Files.OrderBy(x => x.Path))
 				{
-					foreach (var file in Directory.GetFiles(Dir, filePattern, Recursive
-						? SearchOption.AllDirectories
-						: SearchOption.TopDirectoryOnly).OrderBy(x => x))
+					var file = filePatternMatch.Path;
+					if (Path.AltDirectorySeparatorChar != Path.DirectorySeparatorChar)
 					{
-						var subPath = file.Substring(Dir.Length + 1);
-						Process(subPath, printFileName: true, groupedContext);
+						file = file.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
 					}
-				}
-				else
-				{
-					Process(file: filePattern, printFileName: false);
+					Process(file, printFileName: true, groupedContext);
 				}
 			}
 

@@ -12,7 +12,7 @@ namespace Grepl.Tests
 	{
 		private readonly Lazy<string> _slnDir = new Lazy<string>(() =>
 		{
-			var slnDir = typeof(Grep).Assembly.Location;
+			var slnDir = typeof(Grepl).Assembly.Location;
 			while (slnDir.Length > 0)
 			{
 				slnDir = Path.GetDirectoryName(slnDir);
@@ -35,7 +35,7 @@ namespace Grepl.Tests
 			var colorfulStream = new ColorfulStream();
 			Tools.Console = colorfulStream;
 
-			var r =  Grep.Main(args);
+			var r =  global::Grepl.Grepl.Main(args);
 
 			return (r, colorfulStream.StringRaw, "");
 		}

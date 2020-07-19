@@ -23,4 +23,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TestData\Excludes\Dir1\Dir11\" />
+  </ItemGroup>
+
 </Project>

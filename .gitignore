@@ -4,4 +4,4 @@ bin/
 ~$*.xlsx
 **/Properties/launchSettings.json
 TestResults/
-
+*.user

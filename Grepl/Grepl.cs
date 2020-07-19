@@ -12,7 +12,7 @@ namespace Grepl
 {
 	using static Tools;
 
-	public class Grep
+	public class Grepl
 	{
 		static string Exe =>
 			Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location);
@@ -43,13 +43,13 @@ namespace Grepl
 			for (var i = 0; i < args.Length; i++)
 			{
 				var arg = args[i];
-				if (arg.StartsWith("-") || arg.StartsWith("/"))
+				if (arg.StartsWith("-") || (arg.StartsWith("/") && Path.DirectorySeparatorChar != '/'))
 				{
 					switch (arg.Substring(1))
 					{
 						case "r":
 						case "R":
-							executor.Recursive = true;
+							executor.FilesSelectorOptions.Recursive = true;
 							break;
 						case "e":
 							executor.Patterns.Add(args[++i]);
@@ -119,6 +119,20 @@ expression.rx:
 						case "$":
 							executor.ReplaceTo = args[++i];
 							break;
+						case "-exclude-from":
+							var lines = File.ReadAllLines(args[++i]);
+							executor.FilesSelectorOptions.ExcludeGlobs.AddRange(lines);
+							break;
+						case "-exclude-dir":
+							executor.FilesSelectorOptions.ExcludeGlobs.Add(args[++i].TrimEnd('/') + '/');
+							break;
+						case "-exclude":
+							executor.FilesSelectorOptions.ExcludeGlobs.Add(args[++i]);
+							break;
+						case "-include":
+							executor.FilesSelectorOptions.IncludeGlobs.Add(args[++i]);
+							break;
+
 						default:
 							using (Color(ConsoleColor.Red))
 							{
