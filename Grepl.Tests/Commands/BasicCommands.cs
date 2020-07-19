@@ -94,6 +94,87 @@ some data2
 		}
 
 		[TestMethod]
+		public void Should_10_search_with_context()
+		{
+			CreateData("2");
+			var r = GreplEntry("-e", "//3", "file1.txt", "-C", "1");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp =
+				@"//2 aaaa aaaa data aaaa
+//3 bbbb aaaa
+//4 cccc data bbbb data aaaa
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+
+		}
+
+		[TestMethod]
+		public void Should_10_search_with_context_2()
+		{
+			CreateData("2");
+			var r = GreplEntry("-e", "//3", "file1.txt", "-C", "2");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp =
+				@"//1 aaaa bbbb cccc dddd
+//2 aaaa aaaa data aaaa
+//3 bbbb aaaa
+//4 cccc data bbbb data aaaa
+//5 aaaa
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+
+		}
+
+		[TestMethod]
+		public void Should_10_search_with_context_before_1()
+		{
+			CreateData("2");
+			var r = GreplEntry("-e", "//3", "file1.txt", "-B", "1");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp =
+				@"//2 aaaa aaaa data aaaa
+//3 bbbb aaaa
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+
+		}
+
+		[TestMethod]
+		public void Should_10_search_with_context_before_2()
+		{
+			CreateData("2");
+			var r = GreplEntry("-e", "//3", "file1.txt", "-B", "2");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp =
+				@"//1 aaaa bbbb cccc dddd
+//2 aaaa aaaa data aaaa
+//3 bbbb aaaa
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+
+		}
+
+		[TestMethod]
 		public void Should_10_SearchRecursivelyProc()
 		{
 			CreateData("1");

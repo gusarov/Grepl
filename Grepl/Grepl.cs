@@ -132,7 +132,15 @@ expression.rx:
 						case "-include":
 							executor.FilesSelectorOptions.IncludeGlobs.Add(args[++i]);
 							break;
-
+						case "A":
+							executor.ContextCaptureOptions.After = int.Parse(args[++i]);
+							break;
+						case "B":
+							executor.ContextCaptureOptions.Before = int.Parse(args[++i]);
+							break;
+						case "C":
+							executor.ContextCaptureOptions.ContextAround = int.Parse(args[++i]);
+							break;
 						default:
 							using (Color(ConsoleColor.Red))
 							{
