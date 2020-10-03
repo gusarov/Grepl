@@ -627,5 +627,24 @@ file2.txt
 
 		}
 
+		[TestMethod]
+		public void Should_10_exclude_zero_length_match()
+		{
+			File.WriteAllText("test.txt", "abc\n");
+
+			var r = GreplEntry(".*", "-r");
+			Assert.AreEqual(0, r.Code);
+
+			var raw = r.Output;
+			var exp = @"
+test.txt
+abc
+";
+
+			CompareDetails(exp, raw);
+
+			Assert.AreEqual(exp, raw);
+
+		}
 	}
 }

@@ -269,6 +269,10 @@ namespace Grepl
 				// var currentlnStart = -2; // initially unknown
 				foreach (Match match in matches)
 				{
+					if (match.Length == 0)
+					{
+						continue; // ignore zero-length matches and prevent index out of range when index >= length (zero length match at the end of a string)
+					}
 					// find the start of the line
 					var lineStart = body.LastIndexOf('\n', match.Index);
 					lineStart++;
