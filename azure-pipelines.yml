@@ -6,6 +6,9 @@ jobs:
   displayName: 'Build on Windows'
   pool:
     name: default
+    demands:
+    - SpecialSoftware
+    - Agent.OS -equals Windows_NT
   steps:
   - task: UseDotNet@2
     inputs:
