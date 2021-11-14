@@ -23,6 +23,11 @@ namespace Grepl
 		/// file names only, no content
 		/// </summary>
 		public bool FilesWithMatches { get; set; }
+
+		/// <summary>
+		/// o
+		/// </summary>
+		public bool MatchedPartOnly { get; set; }
 	}
 
 	class FilesSelectorOptions
@@ -372,7 +377,7 @@ namespace Grepl
 						{
 							var match = lineMatch.Match;
 
-							if (match.Index > printPosition)
+							if (match.Index > printPosition && !OutputControlOptions.MatchedPartOnly)
 							{
 								output.Write(ConsoleColor.Gray,
 									body.Substring(printPosition, match.Index - printPosition));
@@ -387,18 +392,26 @@ namespace Grepl
 								output.Write(ConsoleColor.Green,
 									GetReplacementString(lineMatch.Regex, match, body, ReplaceTo));
 							}
+							if (OutputControlOptions.MatchedPartOnly)
+							{
+								output.Write(Environment.NewLine);
+							}
 
 							printPosition = match.Index + match.Length;
 						}
 
-						var len = eol + 1 - printPosition;
-						if (len >= 0 && printPosition < body.Length && (len - printPosition) < body.Length)
+						if (!OutputControlOptions.MatchedPartOnly)
 						{
-							output.Write(ConsoleColor.Gray, body.Substring(printPosition, len) + Environment.NewLine);
-						}
-						else
-						{
-							output.Write(null, Environment.NewLine);
+							var len = eol + 1 - printPosition;
+							if (len >= 0 && printPosition < body.Length && (len - printPosition) < body.Length)
+							{
+								output.Write(ConsoleColor.Gray,
+									body.Substring(printPosition, len) + Environment.NewLine);
+							}
+							else
+							{
+								output.Write(null, Environment.NewLine);
+							}
 						}
 					}
 
@@ -486,7 +499,7 @@ namespace Grepl
 			var buf = new byte[3];
 			var len = fs.Read(buf, 0,3);
 			fs.Position = 0;
-			using var sr = new StreamReader(file);
+			using var sr = new StreamReader(fs);
 			body = sr.ReadToEnd();
 			encoding = sr.CurrentEncoding;
 

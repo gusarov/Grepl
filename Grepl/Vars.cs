@@ -22,6 +22,9 @@ namespace Grepl
 			// ["andd"] = "&&",
 			["o/o"] = "%",
 			["0/0"] = "%",
+			["_r"] = "\r",
+			["_n"] = "\n",
+			["_rn"] = "\r\n",
 		};
 
 		public void Add(string var, string val)

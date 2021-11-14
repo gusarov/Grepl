@@ -80,6 +80,9 @@ namespace Grepl
 						case "l":
 							executor.OutputControlOptions.FilesWithMatches = true;
 							break;
+						case "o":
+							executor.OutputControlOptions.MatchedPartOnly = true;
+							break;
 						case "-save":
 							executor.Save = true;
 							break;
@@ -189,6 +192,11 @@ expression.rx:
 			for (var i = 0; i < executor.Patterns.Count; i++)
 			{
 				executor.Patterns[i] = HydratePattern(executor.Patterns[i]);
+			}
+
+			if (!string.IsNullOrEmpty(executor.ReplaceTo))
+			{
+				executor.ReplaceTo = HydratePattern(executor.ReplaceTo);
 			}
 
 			if (executor.Patterns.Count == 0)

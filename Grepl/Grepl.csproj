@@ -14,5 +14,10 @@
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="3.1.6" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Executor.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
 
 </Project>
