@@ -5,9 +5,7 @@ jobs:
 - job: Windows
   displayName: 'Build on Windows'
   pool:
-    name: default
-    demands:
-    - Agent.OS -equals Windows_NT
+    vmImage: 'Windows-latest'
   steps:
   - task: UseDotNet@2
     inputs:
